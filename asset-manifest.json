@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/idalsSite/static/css/main.aa551108.css",
-    "main.js": "/idalsSite/static/js/main.b2389511.js",
+    "main.js": "/idalsSite/static/js/main.cddfb6aa.js",
     "static/js/787.dd4029b4.chunk.js": "/idalsSite/static/js/787.dd4029b4.chunk.js",
     "index.html": "/idalsSite/index.html",
     "main.aa551108.css.map": "/idalsSite/static/css/main.aa551108.css.map",
-    "main.b2389511.js.map": "/idalsSite/static/js/main.b2389511.js.map",
+    "main.cddfb6aa.js.map": "/idalsSite/static/js/main.cddfb6aa.js.map",
     "787.dd4029b4.chunk.js.map": "/idalsSite/static/js/787.dd4029b4.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.aa551108.css",
-    "static/js/main.b2389511.js"
+    "static/js/main.cddfb6aa.js"
   ]
 }
