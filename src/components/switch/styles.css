@@ -1,0 +1,17 @@
+#checkbox:checked + .slider {
+  background-color: #57e777 !important;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 2s;
+}
+#checkbox:checked + .slider:before {
+  transform: translateX(26px);
+}
