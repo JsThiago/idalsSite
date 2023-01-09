@@ -7,6 +7,8 @@ export default function CustomSelect({
   placeholder?: string;
   options?: Array<{ value: string | number; label: string }>;
   style?: CSSProperties;
+  onChange?: (user: string) => void;
+  value?: string;
 }) {
   return (
     <div
@@ -29,7 +31,11 @@ export default function CustomSelect({
         </label>
       )}
       <select
+        value={props.value}
         id="input"
+        onChange={(e) => {
+          props.onChange && props?.onChange(e.target.value);
+        }}
         placeholder={props.placeholder}
         style={{
           borderRadius: 5,

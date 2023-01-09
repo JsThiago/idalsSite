@@ -13,8 +13,11 @@ import * as ol from "ol";
 import proj4 from "proj4";
 import Projection from "ol/proj/Projection";
 import { useGeographic as geographic } from "ol/proj";
+import { layer } from "openlayers";
+import { Console } from "console";
 export default function useMap(mapRef: React.RefObject<HTMLDivElement>) {
   const [map, setMap] = useState<ol.Map>();
+  const [layers, setLayers] = useState<Record<string, TileLayer<any>>>();
   useEffect(() => {
     const olViewports = mapRef.current?.getElementsByClassName("ol-viewport");
     if (olViewports && olViewports.length > 0) return;
@@ -38,9 +41,9 @@ export default function useMap(mapRef: React.RefObject<HTMLDivElement>) {
       params: {
         FORMAT: "image/png",
         VERSION: "1.3.0",
-        TILED: true,
+        TILED: false,
         STYLES: "",
-        LAYERS: "mapa:geometry-apolices2-4",
+        LAYERS: "mapa:all2",
         exceptions: "application/vnd.ogc.se_inimage",
         tilesOrigin: -56.55622135530706 + "," + -31.21237,
       },
@@ -56,11 +59,42 @@ export default function useMap(mapRef: React.RefObject<HTMLDivElement>) {
       controls: [],
       target: undefined,
       view: new ol.View({ maxZoom: 20, zoom: 2 }),
-      layers: [tileLayerMap],
+      layers: [tileLayerMap, tileLayer],
     });
     mapGenerate.setTarget(mapRef.current as HTMLDivElement);
     mapGenerate.getView().fit(bounds, mapGenerate.getSize() as any);
     setMap(mapGenerate);
+    setLayers({ users: tileLayer });
   }, [mapRef]);
-  return map;
+  const formatarFiltros = useCallback(
+    (options: Record<string, string>): string => {
+      let filtroFinal = "";
+      for (let key in options) {
+        filtroFinal += `${key}:${options[key]};`;
+      }
+      return filtroFinal.slice(0, -1);
+    },
+    []
+  );
+  const aplicarFiltros = useCallback(
+    (options: Record<string, string>) => {
+      const filtro = formatarFiltros(options);
+      const tileSource = new TileSource({
+        url: "http://localhost:8080/geoserver/mapa/wms",
+        params: {
+          FORMAT: "image/png",
+          VERSION: "1.3.0",
+          viewparams: filtro,
+          TILED: false,
+          STYLES: "",
+          LAYERS: "mapa:all2",
+          exceptions: "application/vnd.ogc.se_inimage",
+        },
+      });
+      layers?.users.setSource(tileSource);
+      map?.render();
+    },
+    [formatarFiltros, map, layers?.users]
+  );
+  return { map, aplicarFiltros };
 }

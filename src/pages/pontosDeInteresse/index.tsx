@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CriacaoLocaisDeInteresse from "../../components/criacaoLocaisDeInteresse";
 import MenuTopNavigator from "../../components/menuTopNavigator";
 import CadastrarPontosDeInteresse from "./cadastrarPontosDeInteresse";
 import PontosCadastrados from "./pontosCadastrados";
@@ -11,7 +12,7 @@ export default function PontosDeInteresse() {
   ];
   const [actualRoute, setActualRoute] = useState(0);
   return (
-    <div>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <MenuTopNavigator
         options={routesNames}
         actualRoute={actualRoute}
@@ -19,7 +20,10 @@ export default function PontosDeInteresse() {
           setActualRoute(route);
         }}
       />
-      {routesElements[actualRoute]}
+      {
+        //routesElements[actualRoute]
+      }
+      <CriacaoLocaisDeInteresse />
     </div>
   );
 }

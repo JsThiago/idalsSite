@@ -8,14 +8,23 @@ export default function OptionsMenu({
     type: "date" | "selection" | "time";
     ops?: Array<{ label: string; value: string | number }>;
     value: any;
+    onChange?: (user: string) => void;
   }>;
 }) {
-  function Time({ value, name }: { value?: string; name: string }) {
+  function Time({
+    value,
+    name,
+    onChange,
+  }: {
+    value?: string;
+    name: string;
+    onChange?: (time: string) => void;
+  }) {
     return (
       <Paper
         style={{
           maxWidth: "fit-content",
-          padding: "0.5rem 1rem",
+          padding: "1.5rem 1rem",
           display: "flex",
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
@@ -23,16 +32,34 @@ export default function OptionsMenu({
         }}
       >
         <span style={{ marginRight: "1rem" }}>{name}</span>
-        <input type="time" style={{ padding: "0.2rem 0" }} />
+        <input
+          defaultValue={value}
+          onChange={(e) => {
+            if (e.target.value.slice(0, 2) === "00") e.target.value = "23:59";
+            console.debug(e.target.value, "value");
+            onChange && onChange(e.target.value);
+            console.debug(e.target.value);
+          }}
+          type="time"
+          style={{ padding: "0.2rem 0" }}
+        />
       </Paper>
     );
   }
-  function Date({ value, name }: { value?: string; name: string }) {
+  function DateComponent({
+    value,
+    name,
+    onChange,
+  }: {
+    value?: string;
+    name: string;
+    onChange?: (value: string) => void;
+  }) {
     return (
       <Paper
         style={{
           maxWidth: "fit-content",
-          padding: "1rem 1rem",
+          padding: "1.5rem 1rem",
           display: "flex",
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
@@ -40,7 +67,15 @@ export default function OptionsMenu({
         }}
       >
         <span style={{ marginRight: "1rem" }}>{name}</span>
-        <input type="date" value={value} style={{ padding: "0.2rem 0" }} />
+        <input
+          onChange={(e) => {
+            onChange && onChange(e.target.value);
+          }}
+          defaultValue={value}
+          id={name}
+          type="date"
+          style={{ padding: "0.2rem 0" }}
+        />
       </Paper>
     );
   }
@@ -48,16 +83,18 @@ export default function OptionsMenu({
     value,
     name,
     options,
+    onChange,
   }: {
     value?: string;
     name: string;
     options: Array<{ label: string; value: string }>;
+    onChange: (user: string) => void;
   }) {
     return (
       <Paper
         style={{
           maxWidth: "fit-content",
-          padding: "1rem 1rem",
+          padding: "1.5rem 1rem",
           display: "flex",
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
@@ -66,6 +103,11 @@ export default function OptionsMenu({
       >
         <span style={{ marginRight: "0.5rem" }}>{name}</span>
         <CustomSelect
+          value={value}
+          onChange={(user) => {
+            console.log("func:" + onChange);
+            onChange && onChange(user);
+          }}
           style={{
             display: "flex",
             flexDirection: "row",
@@ -82,17 +124,28 @@ export default function OptionsMenu({
         display: "flex",
         flexDirection: "row",
         columnGap: "1rem",
+        justifyContent: "space-between",
         alignItems: "center",
       }}
     >
       {props.options.map((op) => {
+        console.log(op);
         if (op.type === "date")
-          return <Date value={op.value as string} name={op.name} />;
+          return (
+            <DateComponent
+              onChange={op.onChange}
+              value={op.value as string}
+              name={op.name}
+            />
+          );
         else if (op.type === "time")
-          return <Time value={op.value} name={op.name} />;
+          return (
+            <Time value={op.value} name={op.name} onChange={op.onChange} />
+          );
         else if (op.type === "selection")
           return (
             <Selection
+              onChange={op.onChange as () => void}
               value={op.value}
               name={op.name}
               options={op.ops as Array<{ label: string; value: string }>}

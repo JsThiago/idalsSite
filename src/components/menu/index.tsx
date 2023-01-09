@@ -30,16 +30,7 @@ export default function Menu() {
       path: "pontosDeInteresse",
       Icon: ({ color }) => <PinGps color={color} />,
     },
-    {
-      name: "Áreas<br>de interesse",
-      path: "areasDeInteresse",
-      Icon: ({ color }) => <Aim color={color} />,
-    },
-    {
-      name: "Rotas<br>de interesse",
-      path: "rotasDeInteresse",
-      Icon: ({ color }) => <MarkGps color={color} />,
-    },
+
     {
       name: "Visualização<br>individual",
       path: "visualizacaoIndividual",

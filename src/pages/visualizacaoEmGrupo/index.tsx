@@ -13,13 +13,13 @@ export default function VisualizacaoEmGrupo() {
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
   const mapRefUltimaRota = useRef<HTMLDivElement>(null);
 
-  const mapTrajetoria = useMap(
+  const { map: mapTrajetoria } = useMap(
     mapRefTrajetoria as React.RefObject<HTMLDivElement>
   );
-  const mapUltimoPonto = useMap(
+  const { map: mapUltimoPonto } = useMap(
     mapRefUltimoPonto as React.RefObject<HTMLDivElement>
   );
-  const mapUltimaRota = useMap(
+  const { map: mapUltimaRota } = useMap(
     mapRefUltimaRota as React.RefObject<HTMLDivElement>
   );
   mapTrajetoria
