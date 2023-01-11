@@ -1,4 +1,4 @@
-import { memo, useContext } from "react";
+import { memo, useContext, useState } from "react";
 import Button from "../../components/button";
 import CustomInput from "../../components/input";
 import Paper from "../../components/paper";
@@ -7,13 +7,25 @@ import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import { GlobalContext } from "../../context/globalContext";
 
-const OPTIONS_MOCK = [
+const OPTIONS_MOCK_GRUPO = [
   { value: 1, label: "Engenheiro" },
   { value: 2, label: "Visitante" },
   { value: 3, label: "Vigilante" },
 ];
+
+const OPTIONS_MOCK_MODELOS = [
+  { value: 1, label: "Cubecell" },
+  { value: 2, label: "Heltec" },
+  { value: 3, label: "ESP-32" },
+];
+
 function Cadastro() {
   const context = useContext(toastContext).toastCall as Function;
+  const [inputPessoaNome, setPessoaNome] = useState<String>();
+  const [inputPessoaTelefone, setPessoaTelefone] = useState<String>();
+  const [inputPessoaMatricula, setPessoaMatricula] = useState<String>();
+  const [inputCrachaNome, setCrachaNome] = useState<String>();
+  const [inputCrachaUi, setCrachaUi] = useState<String>();
   console.log("refresh");
   return (
     <>
@@ -38,28 +50,28 @@ function Cadastro() {
           }}
         >
           <div style={{}}>
-            <CustomInput label="Nome" placeholder="Ex: José da silva" />
+            <CustomInput label="Nome" placeholder="Ex: José da silva" onChange={(e)=>setPessoaNome(e.target.value)} />
           </div>
           <div style={{}}>
-            <CustomInput label="Matrícula" placeholder="Ex: 1234532553" />
+            <CustomInput label="Matrícula" placeholder="Ex: MAT000" onChange={(e)=>setPessoaMatricula(e.target.value)}/>
           </div>
           <div style={{}}>
-            <CustomInput label="Telefone" placeholder="(31) 994356453" />
+            <CustomInput label="Telefone" placeholder="994356453" onChange={(e)=>setPessoaTelefone(e.target.value)}/>
           </div>
           <div style={{}}>
-            <CustomInput label="E-mail" placeholder="Ex: jose@gmail.com" />
+            <CustomInput label="E-mail*" placeholder="Ex: jose@gmail.com" />
           </div>
           <div style={{}}>
-            <CustomInput label="Telefone 2" placeholder="(31) 37214534" />
+            <CustomInput label="Telefone 2*" placeholder="(31) 37214534" />
           </div>
           <div style={{}}>
             <CustomInput
-              label="Endereço"
+              label="Endereço*"
               placeholder="Ex: Rua América, Bairro Jardim 145, CEP: 36543343"
             />
           </div>
           <div style={{}}>
-            <CustomSelect options={OPTIONS_MOCK} label="Grupo" />
+            <CustomSelect options={OPTIONS_MOCK_GRUPO} label="Grupo*" />
           </div>
         </div>
         <div
@@ -72,6 +84,19 @@ function Cadastro() {
         >
           <Button
             onClick={() => {
+              fetch('http://idals.com.br:3500/funcionario', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'},
+                body: JSON.stringify( {
+                  "nome": inputPessoaNome,
+                  "telefone": inputPessoaTelefone,
+                  "matricula": inputPessoaMatricula,
+                  "login": " ",
+                  "senha": " ",
+                  "area": "marketing"
+                })}).then(response => response.json())
               context("Cadastro realizado com sucesso");
             }}
             label="Cadastrar"
@@ -100,13 +125,13 @@ function Cadastro() {
           }}
         >
           <div style={{}}>
-            <CustomInput label="Nome" placeholder="Ex: 012343451" />
+            <CustomInput label="Nome" placeholder="Ex: José da Silva" onChange={(e)=>setCrachaNome(e.target.value)} />
           </div>
           <div style={{}}>
-            <CustomInput label="Matrícula" placeholder="Ex: 1234532553" />
+            <CustomInput label="devEUI" placeholder="Ex: 6e61d507c6284b81" onChange={(e)=>setCrachaUi(e.target.value)}/>
           </div>
           <div style={{}}>
-            <CustomInput label="Modelo" placeholder="(31) 994356453" />
+          <CustomSelect options={OPTIONS_MOCK_MODELOS} label="MODELO*"/>
           </div>
         </div>
         <div
@@ -119,6 +144,18 @@ function Cadastro() {
         >
           <Button
             onClick={() => {
+              fetch('http://idals.com.br:3500/cracha', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'},
+                body: JSON.stringify( {
+                  "devEUI": inputCrachaUi,
+                  "nome":inputCrachaNome,
+                  "description":"Beitian 220",
+                  "deviceProfileID":"idals-device-ABP",
+                  "modelo":"CubeCell"
+                })}).then(response => response.json())
               context("Cadastro realizado com sucesso");
             }}
             label="Cadastrar"

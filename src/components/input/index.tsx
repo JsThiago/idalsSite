@@ -6,6 +6,7 @@ export default function CustomInput({
   label?: string;
   placeholder?: string;
   style?: CSSProperties;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div
@@ -29,6 +30,7 @@ export default function CustomInput({
       )}
       <input
         id="input"
+        onChange={props.onChange}
         placeholder={props.placeholder}
         style={{
           borderRadius: 5,
