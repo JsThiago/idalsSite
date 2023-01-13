@@ -9,10 +9,14 @@ import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import axios from 'axios'
 
-async function fetchPosts(){
+async function fetchPostsParaVincular(){
   const {data} = await axios.get('http://idals.com.br:3500/semRelacoes') 
-  const numCracha = data.funcionarios.length
-  console.log(data.crachas.length)
+  return data
+}
+
+async function fetchPostsParaVinculados(){
+  const {data} = await axios.get('http://idals.com.br:3500/relacoes') 
+  console.log(data)
   return data
 }
 
@@ -60,7 +64,7 @@ export default function Vinculos() {
           >
             <Button
               onClick={() => {
-                fetchPosts()
+                fetchPostsParaVinculados()
                 console.log("ok")
                 toastCall("Vínculo adicionado com sucesso");
                 setOpenModal(false);
