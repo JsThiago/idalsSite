@@ -7,6 +7,14 @@ import Switch from "../../components/switch";
 import Table from "../../components/table";
 import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
+import axios from 'axios'
+
+async function fetchPosts(){
+  const {data} = await axios.get('http://idals.com.br:3500/semRelacoes') 
+  const numCracha = data.funcionarios.length
+  console.log(data.crachas.length)
+  return data
+}
 
 export default function Vinculos() {
   const [openModal, setOpenModal] = useState(false);
@@ -52,6 +60,8 @@ export default function Vinculos() {
           >
             <Button
               onClick={() => {
+                fetchPosts()
+                console.log("ok")
                 toastCall("Vínculo adicionado com sucesso");
                 setOpenModal(false);
               }}
