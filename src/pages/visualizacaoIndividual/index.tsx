@@ -76,7 +76,7 @@ export default function VisualizacaoIndividual() {
     mapRefTrajetoria as React.RefObject<HTMLDivElement>
   );
   useEffect(() => {
-    fetch("http://idals.com.br:3500/funcionario").then((response) => {
+    fetch("https://api.idals.com.br/funcionario").then((response) => {
       const funcionarioOptionsAux: Array<{ label: string; value: string }> = [];
       const funcionarioInfosAux: Record<string, any> = {};
       response.json().then((funcionarios: Array<DadosFuncionarios>) => {
@@ -350,7 +350,7 @@ export default function VisualizacaoIndividual() {
                 "mapa:all2"
               );
               fetch(
-                `http://idals.com.br:3501/data?funcionario=${user}&de=${data.current}T${timeDe.current}&ate=${data.current}T${timeAte.current}`
+                `https://bigdata.idals.com.br/data?funcionario=${user}&de=${data.current}T${timeDe.current}&ate=${data.current}T${timeAte.current}`
               ).then((response) => {
                 response.json().then((dado) => {
                   const coordinates = dado[dado.length - 1]?.localizacao;

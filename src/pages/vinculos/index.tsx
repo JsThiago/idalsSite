@@ -38,7 +38,7 @@ export default function Vinculos() {
   const [rows, setRows] = useState<Array<[string, string, JSX.Element]>>([]);
   const toastCall = useContext(toastContext).toastCall as Function;
   useEffect(() => {
-    fetch("http://idals.com.br:3500/funcionario").then((response) => {
+    fetch("https://api.idals.com.br/funcionario").then((response) => {
       response.json().then((funcionariosValues: Array<DadosFuncionarios>) => {
         const funcionariosAux: typeof funcionarios = {};
         const funcionariosOptionsAux: typeof funcionariosOptions = [];
@@ -54,12 +54,12 @@ export default function Vinculos() {
         setFuncionarios(funcionariosAux);
       });
     });
-    fetch("http://idals.com.br:3500/relacoes").then((response) => {
+    fetch("https://api.idals.com.br/relacoes").then((response) => {
       response.json().then((relacoes: Array<DadosRelacoes>) => {
         setRelacoes(relacoes);
       });
     });
-    fetch("http://idals.com.br:3500/cracha").then((response) => {
+    fetch("https://api.idals.com.br/cracha").then((response) => {
       const crachasOptionsAux: typeof crachasOptions = [];
       response.json().then((crachas: Array<DadosCracha>) => {
         crachas.forEach((cracha) => {
@@ -81,7 +81,7 @@ export default function Vinculos() {
             size={20}
             style={{ cursor: "pointer" }}
             onClick={() => {
-              fetch("http://idals.com.br:3500/relacoes/" + relacao.crachaId, {
+              fetch("https://api.idals.com.br/relacoes/" + relacao.crachaId, {
                 method: "DELETE",
               }).then((response) => {
                 if (response.status === 200) {
@@ -163,7 +163,7 @@ export default function Vinculos() {
                   funcionarioId: funcionarioVincular,
                 });
                 console.log("data", crachaVincular);
-                fetch("http://idals.com.br:3500/relacoes", {
+                fetch("https://api.idals.com.br/relacoes", {
                   method: "POST",
                   body: data,
                   headers: { "content-type": "application/json" },

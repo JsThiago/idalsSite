@@ -21,7 +21,7 @@ export default function PontosCadastrados() {
   const [rows, setRows] = useState<Array<[string, string, string, any]>>([]);
   const toastCall = toast.toastCall;
   useEffect(() => {
-    fetch("http://idals.com.br:3500/localizacao").then((response) => {
+    fetch("https://api.idals.com.br/localizacao").then((response) => {
       response.json().then((localizacoes: Array<DadosLocalizacao>) => {
         const pontosAux: typeof pontos = [];
         localizacoes.forEach((localizacao) => {
@@ -47,7 +47,7 @@ export default function PontosCadastrados() {
           size={20}
           style={{ cursor: "pointer" }}
           onClick={() => {
-            fetch("http://idals.com.br:3500/localizacao/" + ponto.id, {
+            fetch("https://api.idals.com.br/localizacao/" + ponto.id, {
               method: "DELETE",
             }).then((response) => {
               if (response.status === 200) {

@@ -34,7 +34,7 @@ function randomColorGenerator(colors?: Record<string, string>) {
 export default function VisualizacaoEmGrupo() {
   const toastCall = useContext(toastContext).toastCall as Function;
   useEffect(() => {
-    fetch("http://idals.com.br:3500/localizacao?tipo=area").then((response) => {
+    fetch("https://api.idals.com.br/localizacao?tipo=area").then((response) => {
       const areaOptionsAux: typeof areaOptions = [];
       response.json().then((areas: Array<DadosArea>) => {
         areas.forEach((areaValue) => {
@@ -166,7 +166,7 @@ export default function VisualizacaoEmGrupo() {
           onClick={() => {
             toastCall("Por favor aguarde", 1000);
             removeAllLayers();
-            fetch("http://idals.com.br:3501/data/status?area=" + area)
+            fetch("https://bigdata.idals.com.br/data/status?area=" + area)
               .then((response) => {
                 if (response.status !== 200) {
                   setFuncionarios([]);

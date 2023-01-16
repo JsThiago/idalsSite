@@ -32,7 +32,7 @@ function Cadastro() {
     Array<{ value: string | number; label: string }>
   >([]);
   useEffect(() => {
-    fetch("http://idals.com.br:3500/area").then((data) => {
+    fetch("https://api.idals.com.br/area").then((data) => {
       const optionsAreaAux: typeof optionsArea = [];
       data.json().then((areas: Array<DadosArea>) => {
         areas.forEach((area) => {
@@ -148,7 +148,7 @@ function Cadastro() {
               console.log(area);
               const body = { nome, telefone, matricula, login, senha, area };
               context("Realizando cadastro");
-              fetch("http://idals.com.br:3500/funcionario", {
+              fetch("https://api.idals.com.br/funcionario", {
                 method: "POST",
                 body: JSON.stringify(body),
                 headers: { "content-type": "application/json" },
@@ -257,7 +257,7 @@ function Cadastro() {
                 deviceProfileID,
                 modelo,
               });
-              fetch("http://idals.com.br:3500/cracha", {
+              fetch("https://api.idals.com.br/cracha", {
                 method: "POST",
                 body: data,
                 headers: { "content-type": "application/json" },

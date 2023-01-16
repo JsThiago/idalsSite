@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [cards, setCards] = useState<Array<() => JSX.Element>>([]);
   useEffect(() => {
     let quantidadePorArea: Record<string, number> = {};
-    fetch("http://idals.com.br:3500/localizacao").then((resp) => {
+    fetch("https://api.idals.com.br/localizacao").then((resp) => {
       resp.json().then((data: Array<DadosLocalizacao>) => {
         data.forEach((localizacao) => {
           if (localizacao.tipo === "area") {

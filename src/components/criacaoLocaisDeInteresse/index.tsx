@@ -63,7 +63,7 @@ export default function CriacaoLocaisDeInteresse() {
       localizacao,
       check: true,
     });
-    fetch("http://idals.com.br:3500/localizacao", {
+    fetch("https://api.idals.com.br/localizacao", {
       method: "POST",
       body: data,
       headers: { "content-type": "application/json" },
