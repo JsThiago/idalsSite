@@ -346,7 +346,7 @@ export default function VisualizacaoIndividual() {
                     data.current + "T" + timeAte.current
                   ).toISOString()}`,
                 },
-                "http://localhost:8080/geoserver/mapa/wms",
+                "http://idals.com.br:1112/geoserver/idals/wms",
                 "mapa:all2"
               );
               fetch(
@@ -394,8 +394,8 @@ export default function VisualizacaoIndividual() {
                     gap: 1,
                   },
                   {},
-                  "http://localhost:8080/geoserver/mapa/wms",
-                  "mapa:linhas"
+                  "http://idals.com.br:1112/geoserver/idals/wms",
+                  "idals:linhas"
                 );
                 mapTrajetoria?.updateSize();
               }
