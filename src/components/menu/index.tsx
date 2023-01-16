@@ -6,8 +6,9 @@ import MarkGps from "./icons/markGps";
 import Person from "./icons/person";
 import PinGps from "./icons/pinGps";
 import Plus from "./icons/plus";
+import Relatorio from "./icons/relatorio";
 import TwoPersons from "./icons/twoPersons";
-
+import "./styles.css";
 export default function Menu() {
   const path = useLocation().pathname;
   const routes: Array<{
@@ -41,6 +42,11 @@ export default function Menu() {
       path: "visualizacaoEmGrupo",
       Icon: ({ color }) => <TwoPersons color={color} />,
     },
+    {
+      name: "Relatório",
+      path: "relatorio",
+      Icon: ({ color }) => <Relatorio color={color} />,
+    },
   ];
   const styleSelect: CSSProperties = {
     backgroundColor: "white",
@@ -53,32 +59,30 @@ export default function Menu() {
   };
   return (
     <div
+      className="lateral-menu"
       style={{
         backgroundColor: "#410D5B",
         color: "white",
-        maxWidth: "20rem",
-        minWidth: "20rem",
-        display: "flex",
+        justifyContent: "flex-start",
         flexDirection: "column",
-        flex: 1,
       }}
     >
-      <div>
-        <h1
-          style={{
-            marginTop: 0,
-            display: "flex",
-            flex: 0.5,
-            justifyContent: "center",
-            alignContent: "center",
-            paddingTop: "4rem",
+      <h1
+        style={{
+          marginTop: 0,
+          display: "flex",
+          flex: 0.5,
+          justifyContent: "center",
+          alignContent: "center",
+          paddingTop: "4rem",
 
-            paddingBottom: "1rem",
-          }}
-        >
+          paddingBottom: "1rem",
+        }}
+      >
+        <Link style={{ color: "white", textDecoration: "none" }} to="/">
           <span>IDALS</span>
-        </h1>
-      </div>
+        </Link>
+      </h1>
       <div
         style={{
           display: "grid",
@@ -98,6 +102,7 @@ export default function Menu() {
                 cursor: "pointer",
                 minHeight: "8rem",
                 maxHeight: "8rem",
+                position: "relative",
               }}
               to={"/" + route.path}
             >
@@ -118,7 +123,10 @@ export default function Menu() {
                 <route.Icon
                   color={path === "/" + route.path ? "#410D5B" : "white"}
                 />
-                <span style={{ marginLeft: "1.5rem" }}>
+                <span
+                  className="menu-options-text"
+                  style={{ marginLeft: "1.5rem" }}
+                >
                   {route.name.split("<br>").map((word) => (
                     <>
                       {word}

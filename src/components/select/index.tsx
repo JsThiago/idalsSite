@@ -1,15 +1,17 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect } from "react";
 import "./styles.css";
 export default function CustomSelect({
   ...props
 }: {
   label?: string;
   placeholder?: string;
-  options?: Array<{ value: string | number; label: string }>;
+  options?: Array<{ value: string | number; label: string | number }>;
   style?: CSSProperties;
   onChange?: (user: string) => void;
-  value?: string;
+  value?: string | number;
 }) {
+  console.debug("value", props.value);
+
   return (
     <div
       style={{

@@ -21,12 +21,12 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
   ({ children }: PropsWithChildren) => {
     const [visibility, setVisibility] = useState(false);
     const message = useRef<string>("");
-    const toastCall = useCallback((text: string) => {
+    const toastCall = useCallback((text: string, time = 3000) => {
       setVisibility(true);
       message.current = text;
       setTimeout(() => {
         setVisibility(false);
-      }, 3000);
+      }, time);
     }, []);
     return (
       <div style={{ display: "flex", flex: 1 }}>

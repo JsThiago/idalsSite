@@ -6,10 +6,7 @@ import PontosCadastrados from "./pontosCadastrados";
 
 export default function PontosDeInteresse() {
   const routesNames = ["Pontos cadastrados", "Cadastrar pontos de interesse"];
-  const routesElements = [
-    <PontosCadastrados />,
-    <CadastrarPontosDeInteresse />,
-  ];
+  const routesElements = [<PontosCadastrados />, <CriacaoLocaisDeInteresse />];
   const [actualRoute, setActualRoute] = useState(0);
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -20,10 +17,7 @@ export default function PontosDeInteresse() {
           setActualRoute(route);
         }}
       />
-      {
-        //routesElements[actualRoute]
-      }
-      <CriacaoLocaisDeInteresse />
+      {routesElements[actualRoute]}
     </div>
   );
 }

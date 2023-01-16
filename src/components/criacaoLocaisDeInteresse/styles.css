@@ -5,7 +5,7 @@
 }
 
 .cadastro {
-  height: 10%;
+  flex: 1;
   background-color: #787;
   display: flex;
   flex-direction: column;
@@ -52,7 +52,6 @@ form button:active {
   flex: 1;
   height: 80%;
   width: 65%;
-  position: absolute;
 }
 
 .marker-text {

@@ -1,0 +1,34 @@
+.lateral-menu {
+  padding: 0 1rem;
+  transition: width 1s ease-in-out;
+  position: absolute;
+  z-index: 9900;
+  width: 6rem;
+  height: 100%;
+  flex: 1;
+}
+.menu-options-text {
+  position: absolute;
+  opacity: 0;
+  animation: ease-out-opacity 0.5s forwards;
+
+  left: 60px;
+}
+.lateral-menu:hover .menu-options-text {
+  display: block;
+  animation: ease-in-opacity 0.5s forwards;
+  animation-delay: 0.5s;
+  animation-timing-function: ease-in;
+}
+.lateral-menu:hover {
+  width: 20rem;
+}
+
+@keyframes ease-in-opacity {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -26,7 +26,7 @@ export default function Table({
             marginTop: "1rem",
           }}
         >
-          {props.columns.map((column) => (
+          {props.columns?.map((column) => (
             <th
               style={{
                 flex: column.size,

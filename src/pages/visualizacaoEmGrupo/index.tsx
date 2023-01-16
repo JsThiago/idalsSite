@@ -1,4 +1,14 @@
-import { LegacyRef, useRef } from "react";
+import { Map, VectorTile } from "ol";
+import VectorLayer from "ol/layer/Vector";
+import {
+  LegacyRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import Button from "../../components/button";
 import Checkbox from "../../components/checkbox";
 import OptionsMenu from "../../components/optionsMenu";
 import Paper from "../../components/paper";
@@ -6,33 +16,119 @@ import RadioGroup from "../../components/radioGroup";
 import SquareColor from "../../components/squareColor";
 import Table from "../../components/table";
 import Title from "../../components/title";
-import useMap from "../../hooks/useMap";
+import { toastContext } from "../../components/toast";
+import useMap, { addVectorLayer, drawPoint } from "../../hooks/useMap";
+interface DadosArea {
+  id: number;
+  nome: string;
+}
+function randomColorGenerator(colors?: Record<string, string>) {
+  var randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  if (!colors) return randomColor;
+  while (randomColor in colors) {
+    randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  }
+  return randomColor;
+}
 
 export default function VisualizacaoEmGrupo() {
+  const toastCall = useContext(toastContext).toastCall as Function;
+  useEffect(() => {
+    fetch("http://idals.com.br:3500/localizacao?tipo=area").then((response) => {
+      const areaOptionsAux: typeof areaOptions = [];
+      response.json().then((areas: Array<DadosArea>) => {
+        areas.forEach((areaValue) => {
+          areaOptionsAux.push({ value: areaValue.id, label: areaValue.nome });
+        });
+        console.log("oi");
+        setAreaOptions(areaOptionsAux);
+        setArea(areaOptionsAux[0]?.value as number);
+      });
+    });
+  }, []);
+  const [rows, setRows] = useState<Array<any>>([]);
   const mapRefTrajetoria = useRef<HTMLDivElement>(null);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
   const mapRefUltimaRota = useRef<HTMLDivElement>(null);
+  const oldColorsLayers = useRef<Array<string>>([]);
+  const [funcionarios, setFuncionarios] = useState<
+    Array<[string, string, any, string]>
+  >([]);
+  const layers = useRef<Array<VectorLayer<any>>>([]);
+  const [areaOptions, setAreaOptions] = useState<
+    Array<{ label: string; value: string | number }>
+  >([]);
+  const [area, setArea] = useState<number | string>();
 
-  const { map: mapTrajetoria } = useMap(
-    mapRefTrajetoria as React.RefObject<HTMLDivElement>
-  );
-  const { map: mapUltimoPonto } = useMap(
+  const mapUltimoPonto = useRef<Map>();
+  mapUltimoPonto.current = useMap(
     mapRefUltimoPonto as React.RefObject<HTMLDivElement>
   );
-  const { map: mapUltimaRota } = useMap(
-    mapRefUltimaRota as React.RefObject<HTMLDivElement>
-  );
-  mapTrajetoria
-    ?.getView()
-    .animate({ zoom: 13, center: [-43.4724, -20.216287] });
-  mapUltimoPonto
-    ?.getView()
-    .animate({ zoom: 14, center: [-43.4724, -20.216287] });
-  mapUltimaRota
-    ?.getView()
-    .animate({ zoom: 13, center: [-43.4624, -20.216287] });
+
+  const removeAllLayers = useCallback(() => {
+    layers.current.forEach((layer) => {
+      mapUltimoPonto.current?.removeLayer(layer);
+    });
+
+    layers.current = [];
+    oldColorsLayers.current = [];
+  }, [mapUltimoPonto, layers]);
+  const updateColorsLayers = useCallback(() => {
+    if (!oldColorsLayers.current) return;
+    oldColorsLayers?.current.forEach((value, index) => {
+      if (value !== funcionarios[index][1]) {
+        mapUltimoPonto.current?.removeLayer(layers.current[index]);
+        const newLayer = addVectorLayer(
+          mapUltimoPonto.current as Map,
+          funcionarios[index][1]
+        );
+        drawPoint(funcionarios[index][2], newLayer);
+        oldColorsLayers.current[index] = funcionarios[index][1];
+      }
+    });
+  }, [funcionarios]);
+  const generateRows = useCallback(() => {
+    console.info("gerando linhas:", funcionarios);
+    const rowsAux: typeof rows = [];
+
+    funcionarios.forEach((funcionario, index) => {
+      rowsAux.push([
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <SquareColor
+            color={funcionario[1]}
+            onChange={(color) => {
+              const funcionariosCopy = [...funcionarios];
+              funcionariosCopy[index][1] = color;
+              setFuncionarios(funcionariosCopy);
+            }}
+            style={{
+              borderRadius: "4px",
+              width: "1.5rem",
+              height: "1.5rem",
+            }}
+          />
+        </div>,
+        funcionario[0],
+        "(xx) x xxxx-xxxx",
+        new Date(funcionario[3])?.toTimeString()?.split(" ")[0],
+      ]);
+    });
+    console.info("setando rows", rowsAux);
+    setRows(rowsAux);
+  }, [funcionarios]);
+  useEffect(() => {
+    generateRows();
+    updateColorsLayers();
+  }, [funcionarios, generateRows, updateColorsLayers]);
+
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ marginTop: "-2rem", marginBottom: "2rem" }}>
         <OptionsMenu
           options={[
@@ -44,18 +140,82 @@ export default function VisualizacaoEmGrupo() {
             },
             {
               type: "selection",
-              value: 1,
+              value: area,
+              onChange: (value) => {
+                console.log(areaOptions);
+                setArea(value.toString());
+              },
               name: "Área:",
-              ops: [
-                { label: "Área Barragem 1", value: 1 },
-                { label: "Marko", value: 2 },
-                { label: "Matheus", value: 3 },
-              ],
+              ops: areaOptions,
             },
             { type: "date", value: "2020-11-11", name: "Data:" },
-            { type: "time", value: "7:00", name: "Horário (de):" },
-            { type: "time", value: "7:00", name: "Horário (até):" },
+            { type: "time", value: "07:00", name: "Horário (de):" },
+            { type: "time", value: "07:00", name: "Horário (até):" },
           ]}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          justifyContent: "flex-end",
+          marginBottom: "2rem",
+        }}
+      >
+        <Button
+          onClick={() => {
+            toastCall("Por favor aguarde", 1000);
+            removeAllLayers();
+            fetch("http://idals.com.br:3501/data/status?area=" + area)
+              .then((response) => {
+                if (response.status !== 200) {
+                  setFuncionarios([]);
+                  setTimeout(() => {
+                    toastCall("Não existem dados.");
+                  }, 1000);
+
+                  removeAllLayers();
+                }
+                response.json().then((data: Array<any>) => {
+                  const funcionariosAux: typeof funcionarios = [];
+
+                  const colors: Record<string, any> = {};
+                  data.forEach((value: any) => {
+                    const newColor = randomColorGenerator(colors);
+                    colors[newColor] = 1;
+                    console.log(newColor);
+
+                    funcionariosAux.push([
+                      value.nome_funcionario,
+                      "#" + newColor,
+                      value.localizacao,
+                      value.date,
+                    ]);
+                    oldColorsLayers.current.push("#" + newColor);
+                    const layer = addVectorLayer(
+                      mapUltimoPonto.current as Map,
+                      "#" + newColor
+                    );
+                    layers.current.push(layer);
+                    drawPoint(value.localizacao, layer);
+                  });
+                  mapUltimoPonto.current?.getView().animate({
+                    center: funcionariosAux[0][2],
+                    zoom: 13,
+                  });
+
+                  setFuncionarios(funcionariosAux);
+                });
+              })
+              .catch(() => {
+                setFuncionarios([]);
+                setTimeout(() => {
+                  toastCall("Ocorreu um erro. Por favor tente mais tarde");
+                }, 1000);
+                removeAllLayers();
+              });
+          }}
+          label="Aplicar filtros"
         />
       </div>
       <div
@@ -69,7 +229,7 @@ export default function VisualizacaoEmGrupo() {
         <Paper
           style={{
             height: "40rem",
-            padding: "2rem",
+            padding: "0 2rem 2rem 2rem",
             textAlign: "center",
             borderRadius: "10px",
             boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
@@ -77,146 +237,15 @@ export default function VisualizacaoEmGrupo() {
             flexDirection: "column",
           }}
         >
-          <RadioGroup
-            style={{
-              display: "flex",
-              columnGap: "2rem",
-              fontSize: "1.5rem",
-              padding: "2rem 0",
-              alignItems: "center",
-            }}
-            name="mapaVisualizacaoEmGrupo"
-            options={["Trajetória", "Último ponto registrado"]}
-          />
+          <Title value="Último ponto registrado" />
           <div
             style={{ flex: 1, position: "relative" }}
-            ref={mapRefTrajetoria as LegacyRef<HTMLDivElement>}
+            ref={mapRefUltimoPonto as LegacyRef<HTMLDivElement>}
           />
         </Paper>
         <Paper style={{ height: "fit-content" }}>
           <Table
-            rows={[
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#F70305"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Matheus",
-                "(xx) x xxxx-xxxx",
-              ],
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#00B051"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Felipe",
-                "(xx) x xxxx-xxxx",
-              ],
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#FEFD0D"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Marko",
-                "(xx) x xxxx-xxxx",
-              ],
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#589CD3"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Eduarda",
-                "(xx) x xxxx-xxxx",
-              ],
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#EC7E31"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Fernanda",
-                "(xx) x xxxx-xxxx",
-              ],
-              [
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <SquareColor
-                    color="#42556D"
-                    style={{
-                      borderRadius: "4px",
-                      width: "1.5rem",
-                      height: "1.5rem",
-                    }}
-                  />
-                </div>,
-                "Vinícius",
-                "(xx) x xxxx-xxxx",
-              ],
-            ]}
+            rows={rows}
             columns={[
               {
                 name: (
@@ -228,6 +257,7 @@ export default function VisualizacaoEmGrupo() {
                     }}
                   >
                     <SquareColor
+                      disabled={true}
                       style={{
                         borderRadius: "4px",
                         width: "1.5rem",
@@ -240,6 +270,7 @@ export default function VisualizacaoEmGrupo() {
               },
               { name: "Funcionário", size: 1 },
               { name: "Telefone", size: 1 },
+              { name: "Horário", size: 1 },
             ]}
           />
         </Paper>

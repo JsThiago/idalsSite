@@ -6,6 +6,9 @@ export default function CustomInput({
   label?: string;
   placeholder?: string;
   style?: CSSProperties;
+  onChange?: (text: string) => void;
+  value?: string;
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -29,7 +32,13 @@ export default function CustomInput({
       )}
       <input
         id="input"
+        disabled={props.disabled || false}
+        value={props.value}
         placeholder={props.placeholder}
+        onChange={(e) => {
+          const text = e.target.value;
+          props?.onChange && props.onChange(text);
+        }}
         style={{
           borderRadius: 5,
           fontSize: "1rem",

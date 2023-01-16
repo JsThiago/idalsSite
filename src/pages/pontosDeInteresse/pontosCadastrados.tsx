@@ -1,13 +1,68 @@
+import { useContext, useEffect, useState } from "react";
 import Button from "../../components/button";
 import Checkbox from "../../components/checkbox";
 import EditButton from "../../components/editButton";
 import Paper from "../../components/paper";
+import { MdDeleteOutline } from "react-icons/md";
 import Table from "../../components/table";
 import Title from "../../components/title";
 import { useToast } from "../../components/toast";
-
+interface DadosLocalizacao {
+  nome: string;
+  descricao: string;
+  tipo: string;
+  id: number;
+}
 export default function PontosCadastrados() {
   const toast = useToast();
+  const [pontos, setPontos] = useState<
+    Array<{ nome: string; descricao: string; tipo: string; id: number }>
+  >([]);
+  const [rows, setRows] = useState<Array<[string, string, string, any]>>([]);
+  const toastCall = toast.toastCall;
+  useEffect(() => {
+    fetch("http://idals.com.br:3500/localizacao").then((response) => {
+      response.json().then((localizacoes: Array<DadosLocalizacao>) => {
+        const pontosAux: typeof pontos = [];
+        localizacoes.forEach((localizacao) => {
+          pontosAux.push({
+            descricao: localizacao.descricao,
+            nome: localizacao.nome,
+            tipo: localizacao.tipo,
+            id: localizacao.id,
+          });
+        });
+        setPontos(pontosAux);
+      });
+    });
+  }, []);
+  useEffect(() => {
+    const rowsAux: typeof rows = [];
+    pontos.forEach((ponto, index) => {
+      rowsAux.push([
+        ponto.nome,
+        ponto.descricao,
+        ponto.tipo,
+        <MdDeleteOutline
+          size={20}
+          style={{ cursor: "pointer" }}
+          onClick={() => {
+            fetch("http://idals.com.br:3500/localizacao/" + ponto.id, {
+              method: "DELETE",
+            }).then((response) => {
+              if (response.status === 200) {
+                toastCall("Vínculo desfeito com sucesso");
+                const pontosCopy = [...pontos];
+                pontosCopy.splice(index, 1);
+                setPontos(pontosCopy);
+              } else toastCall("Erro, Por favor tente mais tarde");
+            });
+          }}
+        />,
+      ]);
+    });
+    setRows(rowsAux);
+  }, [pontos]);
   return (
     <Paper
       style={{
@@ -36,88 +91,13 @@ export default function PontosCadastrados() {
       </div>
       <div style={{ padding: "0 3rem" }}>
         <Table
-          rows={[
-            [
-              <Checkbox
-                style={{
-                  borderRadius: "4px",
-                  width: "1.5rem",
-                  height: "1.5rem",
-                }}
-              />,
-              "Estação 1",
-              "Coordenadas : xxxxxx xxxxxx",
-              <EditButton />,
-            ],
-            [
-              <Checkbox
-                style={{
-                  borderRadius: "4px",
-                  width: "1.5rem",
-                  height: "1.5rem",
-                }}
-              />,
-              "Estação 2",
-              "Coordenadas : xxxxxx xxxxxx",
-              <EditButton />,
-            ],
-            [
-              <Checkbox
-                style={{
-                  borderRadius: "4px",
-                  width: "1.5rem",
-                  height: "1.5rem",
-                }}
-              />,
-              "Estação 3",
-              "Coordenadas : xxxxxx xxxxxx",
-              <EditButton />,
-            ],
-            [
-              <Checkbox
-                style={{
-                  borderRadius: "4px",
-                  width: "1.5rem",
-                  height: "1.5rem",
-                }}
-              />,
-              "Estação 4",
-              "Coordenadas : xxxxxx xxxxxx",
-              <EditButton />,
-            ],
-          ]}
+          rows={rows}
           columns={[
-            {
-              name: (
-                <Checkbox
-                  style={{
-                    borderRadius: "4px",
-                    width: "1.5rem",
-                    height: "1.5rem",
-                  }}
-                />
-              ),
-              size: 0.2,
-            },
             { name: "Nome do ponto", size: 1 },
             { name: "Detalhes", size: 1 },
-            { name: "Editar", size: 1 },
+            { name: "Tipo", size: 1 },
+            { name: "Opções", size: 1 },
           ]}
-        />
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          padding: "2rem",
-          marginTop: "4rem",
-        }}
-      >
-        <Button
-          label="Salvar"
-          onClick={() => {
-            toast.toastCall("Pontos salvos com sucesso");
-          }}
         />
       </div>
     </Paper>

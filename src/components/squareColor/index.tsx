@@ -5,14 +5,22 @@ export default function SquareColor({
 }: {
   color?: string;
   style?: CSSProperties;
+  disabled?: boolean;
+  value?: string;
+  onChange?: (color: string) => void;
 }) {
   return (
-    <div
+    <input
+      type="color"
+      value={props.color || "#ffffff"}
+      onChange={(color) => props.onChange && props.onChange(color.target.value)}
+      disabled={props?.disabled || false}
       style={{
-        backgroundColor: props.color || "white",
+        cursor: props.disabled ? "initial" : "pointer",
         width: "2rem",
         height: "2rem",
         border: "1px solid #CCCCCC",
+        padding: 0,
         ...props.style,
       }}
     />

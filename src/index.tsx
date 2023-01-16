@@ -3,10 +3,12 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+const rootElement = document.getElementById("root") as HTMLElement;
+setTimeout(() => {
+  rootElement.className = "";
+}, 500);
+const root = ReactDOM.createRoot(rootElement);
 
-const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
-);
 root.render(
   <React.StrictMode>
     <App />

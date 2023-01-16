@@ -1,0 +1,21 @@
+.picker {
+  visibility: hidden;
+  position: absolute;
+  z-index: 99999999999;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: white;
+  border: 0.5px solid rgba(0, 0, 0, 0.5);
+  min-width: 100px;
+  min-height: 100px;
+  left: -3rem;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+  flex: 1;
+}
+.timepicker-input {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}

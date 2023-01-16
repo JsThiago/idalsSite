@@ -1,8 +1,11 @@
 import Paper from "../paper";
 import CustomSelect from "../select";
+import Timepicker from "../timepicker";
+import "./styles.css";
 export default function OptionsMenu({
   ...props
 }: {
+  style?: React.CSSProperties;
   options: Array<{
     name: string;
     type: "date" | "selection" | "time";
@@ -32,15 +35,13 @@ export default function OptionsMenu({
         }}
       >
         <span style={{ marginRight: "1rem" }}>{name}</span>
-        <input
+        <Timepicker
           defaultValue={value}
-          onChange={(e) => {
-            if (e.target.value.slice(0, 2) === "00") e.target.value = "23:59";
-            console.debug(e.target.value, "value");
-            onChange && onChange(e.target.value);
-            console.debug(e.target.value);
+          onChange={(value) => {
+            onChange && onChange(value);
           }}
           type="time"
+          className="without-ampm"
           style={{ padding: "0.2rem 0" }}
         />
       </Paper>
@@ -126,10 +127,10 @@ export default function OptionsMenu({
         columnGap: "1rem",
         justifyContent: "space-between",
         alignItems: "center",
+        ...props.style,
       }}
     >
       {props.options.map((op) => {
-        console.log(op);
         if (op.type === "date")
           return (
             <DateComponent

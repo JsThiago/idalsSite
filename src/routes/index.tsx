@@ -13,6 +13,8 @@ import Vinculos from "../pages/vinculos";
 import VisualizacaoEmGrupo from "../pages/visualizacaoEmGrupo";
 import VisualizacaoIndividual from "../pages/visualizacaoIndividual";
 import packageJson from "../../package.json";
+import Dashboard from "../pages/dashboard";
+import Relatorio from "../pages/relatorio";
 function BaseLayout({
   Component,
 }: {
@@ -30,25 +32,36 @@ function BaseLayout({
       className="App"
     >
       <Header />
-      <div style={{ display: "flex", flexDirection: "row" }}>
+      <div
+        style={{ display: "flex", flexDirection: "row", position: "relative" }}
+      >
         <Menu />
-        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            marginLeft: "6rem",
+          }}
+        >
           <BarraDeNavegacao />
-          <div style={{ padding: "3rem 5rem 3rem 5rem" }}>
+          <div style={{ padding: "3rem 3rem 3rem 3rem", minHeight: "100vh" }}>
             <Component />
           </div>
         </div>
       </div>
-      <Footer style={{ padding: "2rem" }} />
+      <div style={{ maxHeight: "1px" }}>
+        <Footer style={{ padding: "2rem" }} />
+      </div>
     </div>
   );
 }
 
 function CustomRoutes() {
   return (
-    <BrowserRouter basename={packageJson.homepage.split("/").pop()}>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate replace to={"/cadastro"} />} />
+        <Route path="/" element={<BaseLayout Component={Dashboard} />} />
         <Route path="/cadastro" element={<BaseLayout Component={Cadastro} />} />
         <Route path="/vinculos" element={<BaseLayout Component={Vinculos} />} />
         <Route
@@ -71,6 +84,10 @@ function CustomRoutes() {
         <Route
           path="visualizacaoEmGrupo"
           element={<BaseLayout Component={VisualizacaoEmGrupo} />}
+        />
+        <Route
+          path="relatorio"
+          element={<BaseLayout Component={Relatorio} />}
         />
         <Route path="*" element={<BaseLayout Component={NotFound} />} />
       </Routes>
