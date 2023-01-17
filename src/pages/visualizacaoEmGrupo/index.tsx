@@ -23,15 +23,22 @@ interface DadosArea {
   nome: string;
 }
 function randomColorGenerator(colors?: Record<string, string>) {
-  var randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  let randomColor = Math.floor(Math.random() * 16777215).toString(16);
+
+  while (randomColor.length < 6) {
+    randomColor = Math.floor(Math.random() * 16777215).toString(16);
+  }
   if (!colors) return randomColor;
-  while (randomColor in colors) {
+  while (randomColor in colors && randomColor.length < 6) {
     randomColor = Math.floor(Math.random() * 16777215).toString(16);
   }
   return randomColor;
 }
 
 export default function VisualizacaoEmGrupo() {
+  const [data, setData] = useState("");
+  const [de, setDe] = useState("07:00");
+  const [ate, setAte] = useState("08:00");
   const toastCall = useContext(toastContext).toastCall as Function;
   useEffect(() => {
     fetch("https://api.idals.com.br/localizacao?tipo=area").then((response) => {
@@ -46,9 +53,7 @@ export default function VisualizacaoEmGrupo() {
     });
   }, []);
   const [rows, setRows] = useState<Array<any>>([]);
-  const mapRefTrajetoria = useRef<HTMLDivElement>(null);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
-  const mapRefUltimaRota = useRef<HTMLDivElement>(null);
   const oldColorsLayers = useRef<Array<string>>([]);
   const [funcionarios, setFuncionarios] = useState<
     Array<[string, string, any, string]>
@@ -147,9 +152,30 @@ export default function VisualizacaoEmGrupo() {
               name: "Área:",
               ops: areaOptions,
             },
-            { type: "date", value: "2020-11-11", name: "Data:" },
-            { type: "time", value: "07:00", name: "Horário (de):" },
-            { type: "time", value: "07:00", name: "Horário (até):" },
+            {
+              type: "date",
+              onChange: (value) => {
+                setData(value);
+              },
+              value: data,
+              name: "Data:",
+            },
+            {
+              type: "time",
+              onChange: (value) => {
+                setDe(value);
+              },
+              value: de,
+              name: "Horário (de):",
+            },
+            {
+              type: "time",
+              onChange: (value) => {
+                setAte(value);
+              },
+              value: ate,
+              name: "Horário (até):",
+            },
           ]}
         />
       </div>
