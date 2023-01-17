@@ -40,7 +40,6 @@ export default function VisualizacaoEmGrupo() {
         areas.forEach((areaValue) => {
           areaOptionsAux.push({ value: areaValue.id, label: areaValue.nome });
         });
-        console.log("oi");
         setAreaOptions(areaOptionsAux);
         setArea(areaOptionsAux[0]?.value as number);
       });
@@ -201,7 +200,7 @@ export default function VisualizacaoEmGrupo() {
                   });
                   mapUltimoPonto.current?.getView().animate({
                     center: funcionariosAux[0][2],
-                    zoom: 13,
+                    zoom: 19,
                   });
 
                   setFuncionarios(funcionariosAux);

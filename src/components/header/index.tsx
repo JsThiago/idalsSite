@@ -45,8 +45,22 @@ export default function Header() {
           <a style={{ all: "unset", cursor: "pointer" }} href="#">
             <h2 style={{ fontWeight: 400 }}> FORNECEDORES</h2>
           </a>{" "}
-          <a style={{ all: "unset", cursor: "pointer" }} href="#">
-            <h2 style={{ fontWeight: 400 }}> CADASTRO</h2>
+          <a
+            style={{
+              cursor: "pointer",
+              border: "none",
+              textDecoration: "none",
+            }}
+            href="#"
+          >
+            <h2
+              style={{
+                fontWeight: 400,
+              }}
+            >
+              {" "}
+              CADASTRO
+            </h2>
           </a>
           <a style={{ all: "unset", cursor: "pointer" }} href="#">
             <h2 style={{ fontWeight: 400 }}> CONTATOS</h2>

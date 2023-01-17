@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 type ToastContextValues = {
-  toastCall: (msg: string) => void;
+  toastCall: (msg: string, time?: number) => void;
 };
 const initialValues: ToastContextValues = {
   toastCall: () => "",

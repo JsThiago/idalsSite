@@ -17,6 +17,7 @@ export default function Button({
         setTimeout(() => {
           setAnimation(false);
         }, 200);
+        console.debug(props.onClick);
         props.onClick && props.onClick();
       }}
       style={{
