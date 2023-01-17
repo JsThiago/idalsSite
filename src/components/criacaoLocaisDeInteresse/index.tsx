@@ -37,9 +37,9 @@ export default function CriacaoLocaisDeInteresse() {
   }, [tipoSugerido.current]);
   const [nome, setNome] = useState<string>("");
   const layerGroupRef = useRef<L.LayerGroup>();
-  const initialView: LatLngExpression = [-20, -43];
+  const initialView: LatLngExpression = [-20.2089622, -43.4796796];
   function createMap(container: HTMLElement) {
-    let m = L.map(container, { preferCanvas: true }).setView(initialView, 11);
+    let m = L.map(container, { preferCanvas: true }).setView(initialView, 14);
     L.tileLayer("http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}", {
       attribution: `
 	        &copy;<a href="https://carto.com/attributions" target="_blank">CARTO</a>`,
