@@ -8,24 +8,27 @@ import Title from "../../components/title";
 interface DadosLocalizacao {
   nome: string;
   tipo: string;
+  id: number;
+  quant: number;
 }
 export default function Dashboard() {
   const [cards, setCards] = useState<Array<() => JSX.Element>>([]);
+  const [areas, setAreas] = useState<Record<string | number, any>>({});
   useEffect(() => {
     let quantidadePorArea: Record<string, number> = {};
-    fetch("https://api.idals.com.br/localizacao").then((resp) => {
+    fetch("https://api.idals.com.br/localizacao?tipo=area").then((resp) => {
       resp.json().then((data: Array<DadosLocalizacao>) => {
+        const areasAux: typeof areas = {};
         data.forEach((localizacao) => {
-          if (localizacao.tipo === "area") {
-            //quantidadePorArea[localizacao] = 1;
-          } else return;
+          areasAux[localizacao.id] = { ...localizacao, quant: 0 };
         });
-        const arrayFuncionariosPorAreaOrdenado = Object.entries(
-          quantidadePorArea
-        ).sort((a, b) => +(a[1] < b[1]));
+        setAreas(areasAux);
       });
     });
   }, []);
+  useEffect(() => {
+    fetch("");
+  }, [areas]);
   return (
     <div
       style={{

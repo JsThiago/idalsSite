@@ -48,6 +48,8 @@ export default function VisualizacaoIndividual() {
   }
   const mapRefTrajetoria = useRef<HTMLDivElement>(null);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
+  const [lineGap, setLineGap] = useState<number>(1);
+  const [minDist, setMinDist] = useState<number>(1);
   const [showLines, setShowLines] = useState<boolean>(false);
   const mapRefUltimaRota = useRef<HTMLDivElement>(null);
   const wmsTrajetoriaLayer = useRef<TileLayer<any> | null>(null);
@@ -139,12 +141,11 @@ export default function VisualizacaoIndividual() {
               user,
               funcionariosInfo.current[user]
             );
+            console.info(a.features[0].properties.date);
             content.innerHTML = `<div><span>Nome: ${user}</span></br><span> </span></br><span>Telefone: ${
               funcionariosInfo.current[user].telefone
             }</span></br><span> </span></br><span>Horário: ${
-              new Date(a.features[0].properties.date)
-                .toTimeString()
-                .split(" ")[0]
+              a.features[0].properties.date.split("T")[1].split(".")[0]
             }</span></div>`;
             popup.hidden = false;
           }
@@ -270,35 +271,104 @@ export default function VisualizacaoIndividual() {
           }}
         >
           <div
-            style={
-              fullscreen
-                ? {
-                    display: "flex",
-                    alignItems: "center",
-                    backgroundColor: "white",
-                    padding: "1rem",
-                    borderRadius: "0.5rem",
-                  }
-                : { display: "flex", alignItems: "center" }
-            }
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              rowGap: "0.5rem",
+            }}
           >
-            <Checkbox
-              style={{ fontSize: "3rem", marginRight: "0.5rem" }}
-              onClick={() => {
-                if (wmsTrajetoriaLineLayer)
-                  wmsTrajetoriaLineLayer.current?.setVisible(!showLines);
-                setShowLines(!showLines);
-              }}
-            />
-            <label
-              style={{
-                fontSize: "1.3rem",
-                color: "rgb(48, 25, 52)",
-              }}
-              htmlFor="checkbox-visualizacao-individual"
+            <div
+              style={
+                fullscreen
+                  ? {
+                      display: "flex",
+                      alignItems: "center",
+                      backgroundColor: "white",
+                      padding: "1rem",
+                      borderRadius: "0.5rem",
+                    }
+                  : { display: "flex", alignItems: "center" }
+              }
             >
-              Linhas
-            </label>
+              <Checkbox
+                style={{ fontSize: "3rem", marginRight: "0.5rem" }}
+                onClick={() => {
+                  if (wmsTrajetoriaLineLayer)
+                    wmsTrajetoriaLineLayer.current?.setVisible(!showLines);
+                  setShowLines(!showLines);
+                }}
+              />
+              <label
+                style={{
+                  fontSize: "1.3rem",
+                  color: "rgb(48, 25, 52)",
+                }}
+                htmlFor="checkbox-visualizacao-individual"
+              >
+                Linhas
+              </label>
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "1.3rem",
+                  color: "rgb(48, 25, 52)",
+                }}
+              >
+                Line gap:
+              </label>
+              <input
+                type="number"
+                defaultValue={1}
+                min={1}
+                value={lineGap}
+                onKeyDown={(e) => {
+                  e.preventDefault();
+                }}
+                onChange={(e) => {
+                  setLineGap(+e.target.value);
+                }}
+                maxLength={2}
+                style={{
+                  marginLeft: "1rem",
+                  border: "none",
+                  borderBottom: "1px solid black",
+                  outline: "none",
+
+                  maxWidth: "3rem",
+                  backgroundColor: "transparent",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "1.3rem",
+                  color: "rgb(48, 25, 52)",
+                }}
+              >
+                Distância mínima (m):
+              </label>
+              <input
+                type="number"
+                defaultValue={1}
+                min={0}
+                value={minDist}
+                onChange={(e) => {
+                  setMinDist(+e.target.value);
+                }}
+                maxLength={2}
+                style={{
+                  marginLeft: "1rem",
+                  border: "none",
+                  borderBottom: "1px solid black",
+                  outline: "none",
+
+                  maxWidth: "3rem",
+                  backgroundColor: "transparent",
+                }}
+              />
+            </div>
           </div>
           <Button
             label="Aplicar filtros"
@@ -327,12 +397,24 @@ export default function VisualizacaoIndividual() {
                 )
                   ?.getSource()
                   ?.removeFeature(lastPointTrajetoria.current);
+
+              const dateISOate = new Date(
+                data.current + "T" + timeAte.current
+              ).toISOString();
+              const dateISOde = new Date(
+                data.current + "T" + timeDe.current
+              ).toISOString();
+              const finalDate = new Date(data.current + "T" + timeAte.current);
+
+              finalDate.setHours(finalDate.getHours() - 3);
               console.debug({
                 funcionario: user,
-                data: `${data.current}`,
+                dataAte: `${data.current}`,
+                dataDe: `${data.current}`,
                 timeDe: `${timeDe.current}`,
                 timeAte: `${timeAte.current}`,
               });
+              console.info("oi", finalDate.toISOString());
               drawWMS(
                 wmsTrajetoriaLayer.current as TileLayer<any>,
                 {
@@ -340,11 +422,11 @@ export default function VisualizacaoIndividual() {
                   data: `${data.current}`,
                   timeDe: `${timeDe.current}`,
                   timeAte: `${timeAte.current}`,
+
+                  min_dist: minDist,
                 },
                 {
-                  finalDate: `${new Date(
-                    data.current + "T" + timeAte.current
-                  ).toISOString()}`,
+                  finalDate: `${finalDate.toISOString()}`,
                 },
                 "http://idals.com.br:1112/geoserver/idals/wms",
                 "mapa:all2"
@@ -391,7 +473,8 @@ export default function VisualizacaoIndividual() {
                     data: `${data.current}`,
                     timeDe: `${timeDe.current}`,
                     timeAte: `${timeAte.current}`,
-                    gap: 1,
+                    gap: lineGap,
+                    min_dist: minDist,
                   },
                   {},
                   "http://idals.com.br:1112/geoserver/idals/wms",
