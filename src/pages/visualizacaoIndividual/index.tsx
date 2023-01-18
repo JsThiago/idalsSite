@@ -428,7 +428,7 @@ export default function VisualizacaoIndividual() {
                 {
                   finalDate: `${finalDate.toISOString()}`,
                 },
-                "http://idals.com.br:1112/geoserver/idals/wms",
+                "https://geoserver.idals.com.br/geoserver/idals/wms",
                 "mapa:all2"
               );
               fetch(
@@ -477,7 +477,7 @@ export default function VisualizacaoIndividual() {
                     min_dist: minDist,
                   },
                   {},
-                  "http://idals.com.br:1112/geoserver/idals/wms",
+                  "https://geoserver.idals.com.br/geoserver/idals/wms",
                   "idals:linhas"
                 );
                 mapTrajetoria?.updateSize();

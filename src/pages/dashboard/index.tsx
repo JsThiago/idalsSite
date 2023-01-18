@@ -27,7 +27,13 @@ export default function Dashboard() {
     });
   }, []);
   useEffect(() => {
-    fetch("");
+    Object.entries(areas).forEach(([keys, value], index) => {
+      fetch("https://bigdata.idals.com.br/data/status?area=" + keys).then(
+        (response) => {
+          response.json().then(() => {});
+        }
+      );
+    });
   }, [areas]);
   return (
     <div
