@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import Button from "../../components/button";
 import Card from "../../components/card";
 import ElipsePerson from "../../components/card/icons/people";
 import Circle from "../../components/circle";
 import Paper from "../../components/paper";
 import SubTitle from "../../components/subTitle";
+import Table from "../../components/table";
 import Title from "../../components/title";
+import calcularPercentBateria from "../../utils/calcularPercentBateria";
+import randomColorGeneratorRGBA from "../../utils/randomColorGeneratorRGBA";
 interface DadosLocalizacao {
   nome: string;
   tipo: string;
@@ -12,33 +16,111 @@ interface DadosLocalizacao {
   quant: number;
 }
 export default function Dashboard() {
-  const [cards, setCards] = useState<Array<() => JSX.Element>>([]);
   const [areas, setAreas] = useState<Record<string | number, any>>({});
+  const [totalPessoas, setTotalDePessoas] = useState<number>(0);
+  const [baterias, setBaterias] = useState<
+    Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
+  >({});
+  const [dataCards, setDataCards] = useState<
+    Array<{ nome: string; quant: number; color: string }>
+  >([]);
+  const [areaSelected, setAreaSelected] = useState<string>("Todas");
+  const [rows, setRows] = useState<Record<string, Array<Array<any>>>>({
+    Todas: [],
+  });
   useEffect(() => {
-    let quantidadePorArea: Record<string, number> = {};
     fetch("https://api.idals.com.br/localizacao?tipo=area").then((resp) => {
       resp.json().then((data: Array<DadosLocalizacao>) => {
         const areasAux: typeof areas = {};
         data.forEach((localizacao) => {
-          areasAux[localizacao.id] = { ...localizacao, quant: 0 };
+          areasAux[localizacao.id] = { ...localizacao };
         });
         setAreas(areasAux);
       });
     });
   }, []);
   useEffect(() => {
-    Object.entries(areas).forEach(([keys, value], index) => {
-      fetch("https://bigdata.idals.com.br/data/status?area=" + keys).then(
-        (response) => {
-          response.json().then(() => {});
-        }
-      );
+    const dataCardsAux: typeof dataCards = [];
+    let totalDePessoasAux = 0;
+    const colorsUsed: Record<string, any> = {};
+    const newRows: typeof rows = { Todas: [] };
+    const newBaterias: typeof baterias = {
+      Todas: {
+        amarelo: 0,
+        verde: 0,
+        vermelho: 0,
+      },
+    };
+    const promises = Promise.all(
+      Object.entries(areas).map(async ([keys, value], index) => {
+        newRows[value.nome] = [];
+        newBaterias[value.nome as string] = {
+          amarelo: 0,
+          verde: 0,
+          vermelho: 0,
+        };
+
+        const response = await fetch(
+          "https://bigdata.idals.com.br/data/status?area=" + keys
+        );
+        const json = await response.json();
+
+        json.forEach((info: any, index: number) => {
+          console.info(
+            areas,
+            value.nome,
+            index,
+            "bateria: ",
+            calcularPercentBateria(info.bateria)
+          );
+          let color: string | undefined = "";
+          if (calcularPercentBateria(info.bateria) > 12) {
+            newBaterias[value.nome as string].verde += 1;
+            newBaterias["Todas" as string].verde += 1;
+            color = undefined;
+          } else if (calcularPercentBateria(info.bateria) < 5) {
+            newBaterias[value.nome as string].vermelho += 1;
+            newBaterias["Todas"].vermelho += 1;
+            color = "#BC0202";
+          } else {
+            newBaterias[value.nome as string].amarelo += 1;
+            newBaterias["Todas"].amarelo += 1;
+            color = "#ECD03B";
+          }
+          newRows[value.nome].push([
+            <Circle color={color} style={{ width: "2rem", height: "2rem" }} />,
+            info.nome_funcionario,
+            info.funcionario.matricula,
+          ]);
+          newRows["Todas"].push([
+            <Circle color={color} style={{ width: "2rem", height: "2rem" }} />,
+            info.nome_funcionario,
+            info.funcionario.matricula,
+          ]);
+        });
+        totalDePessoasAux += json?.length;
+        const newColor = randomColorGeneratorRGBA(colorsUsed);
+        const newColorRGB = `${newColor.r}, ${newColor.g}, ${newColor.b}`;
+        dataCardsAux.push({
+          nome: value?.nome,
+          quant: json?.length,
+          color: newColorRGB,
+        });
+
+        colorsUsed[newColorRGB] = 1;
+      })
+    );
+    console.info(newBaterias);
+    setBaterias(newBaterias);
+    setRows(newRows);
+    promises.then(() => {
+      setDataCards(dataCardsAux);
+      setTotalDePessoas(totalDePessoasAux);
     });
   }, [areas]);
   return (
     <div
       style={{
-        flex: 1,
         display: "flex",
         flexDirection: "column",
         rowGap: "3rem",
@@ -82,8 +164,13 @@ export default function Dashboard() {
             }}
           >
             <Card
+              id="card-total-pessoas"
               styleLegenda={{ marginBottom: "2.3rem" }}
               color="#F5E8A4"
+              onClick={(e) => {
+                setAreaSelected("Todas");
+              }}
+              number={totalPessoas}
               style={{
                 minWidth: "13rem",
                 backgroundColor: "#F5E8A4",
@@ -123,27 +210,36 @@ export default function Dashboard() {
               }}
             />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              padding: "0 3rem",
-            }}
-          >
-            <Card></Card>
-            <Card title="Mina2" titleColor="#F26D6D" color="#F5A4A4"></Card>
-            <Card
-              title="Barragem Germano"
-              color="#C3A4F5"
-              titleColor="#9155F4"
-            ></Card>
-            <Card
-              title="Barragem Santarem"
-              color="#B6DAAD"
-              titleColor="#27BC02"
-            ></Card>
-            <Card title="Outros" color="#F5A4DF" titleColor="#F93FC5"></Card>
+          <div>
+            {dataCards.length > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4,auto)",
+                  rowGap: "4rem",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  padding: "0 3rem",
+                  flex: 1,
+                }}
+              >
+                {dataCards
+                  .sort((a, b) => +(a.quant < b.quant))
+                  .map((data, index) => (
+                    <Card
+                      onClick={(e) => {
+                        console.info(rows);
+                        setAreaSelected(e);
+                      }}
+                      id={`${data.nome}-card-${data.quant}-${data.color}`}
+                      number={data.quant}
+                      title={data.nome}
+                      color={data.color}
+                      titleColor={data.color}
+                    ></Card>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       </Paper>
@@ -195,7 +291,9 @@ export default function Dashboard() {
               }}
             >
               <Circle />
-              <span>200 pessoas com funcionário perfeito</span>
+              <span>{`${
+                baterias[areaSelected]?.verde || 0
+              }  pessoas com crachá perfeito`}</span>
             </div>
             <div
               style={{
@@ -207,7 +305,10 @@ export default function Dashboard() {
               }}
             >
               <Circle color="#ECD03B" />
-              <span>42 pessoas com bateria abaixo de 12%</span>
+              <span>
+                {`${baterias[areaSelected]?.amarelo || 0} pessoas com bateria
+                abaixo de 12%`}
+              </span>
             </div>
             <div
               style={{
@@ -219,7 +320,10 @@ export default function Dashboard() {
               }}
             >
               <Circle color="#BC0202" />
-              <span>3 pessoas com problemas de detecção</span>
+              <span>
+                {`${baterias[areaSelected]?.vermelho || 0} pessoas com problemas
+                de detecção`}
+              </span>
             </div>
           </div>
         </Paper>
@@ -227,11 +331,32 @@ export default function Dashboard() {
           style={{
             display: "flex",
             flex: 1,
+            maxHeight: "35rem",
             borderRadius: "30px",
             boxShadow: "0.5px 0.5px  6px 0.5px rgba(0,0,0,0.25)",
+            flexDirection: "column",
+            paddingBottom: "1rem",
           }}
         >
-          <Title value="Acompanhamento" />
+          <Title value={`Acompanhamento da Área: ${areaSelected}`} />
+          <div style={{ padding: "0 1rem 0 1rem", overflow: "scroll" }}>
+            <Table
+              columns={[
+                {
+                  name: "Status",
+                  size: 0.5,
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                },
+                { size: 1, name: "Nome do funcionário" },
+                { name: "Matrícula", size: 0.5 },
+              ]}
+              rows={rows[areaSelected] || []}
+            />
+          </div>
         </Paper>
       </div>
     </div>

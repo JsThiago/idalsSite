@@ -40,6 +40,7 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
             marginLeft: "-4rem",
             padding: "1rem 1rem 1rem 1rem ",
             bottom: "3%",
+            transform:"translate(-30%,0)",
             left: "50%",
             color: "white",
             zIndex: 9999999,

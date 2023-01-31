@@ -8,37 +8,26 @@ import {
   useRef,
   useState,
 } from "react";
+import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "react-icons/ai";
 import Button from "../../components/button";
-import Checkbox from "../../components/checkbox";
 import OptionsMenu from "../../components/optionsMenu";
 import Paper from "../../components/paper";
-import RadioGroup from "../../components/radioGroup";
 import SquareColor from "../../components/squareColor";
 import Table from "../../components/table";
 import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import useMap, { addVectorLayer, drawPoint } from "../../hooks/useMap";
+import randomColorGenerator from "../../utils/randomColorGenerator";
 interface DadosArea {
   id: number;
   nome: string;
-}
-function randomColorGenerator(colors?: Record<string, string>) {
-  let randomColor = Math.floor(Math.random() * 16777215).toString(16);
-
-  while (randomColor.length < 6) {
-    randomColor = Math.floor(Math.random() * 16777215).toString(16);
-  }
-  if (!colors) return randomColor;
-  while (randomColor in colors && randomColor.length < 6) {
-    randomColor = Math.floor(Math.random() * 16777215).toString(16);
-  }
-  return randomColor;
 }
 
 export default function VisualizacaoEmGrupo() {
   const [data, setData] = useState("");
   const [de, setDe] = useState("07:00");
   const [ate, setAte] = useState("08:00");
+  const [fullscreen, setFullscreen] = useState(false);
   const toastCall = useContext(toastContext).toastCall as Function;
   useEffect(() => {
     fetch("https://api.idals.com.br/localizacao?tipo=area").then((response) => {
@@ -119,7 +108,6 @@ export default function VisualizacaoEmGrupo() {
           />
         </div>,
         funcionario[0],
-        "(xx) x xxxx-xxxx",
         new Date(funcionario[3])?.toTimeString()?.split(" ")[0],
       ]);
     });
@@ -130,10 +118,59 @@ export default function VisualizacaoEmGrupo() {
     generateRows();
     updateColorsLayers();
   }, [funcionarios, generateRows, updateColorsLayers]);
-
+  const stylesFullscreen: React.CSSProperties = {
+    position: "fixed",
+    width: "100vw",
+    height: "100vh",
+    overflow: "scroll",
+    top: 0,
+    left: 0,
+    zIndex: 999999,
+    backgroundColor: "white",
+    display: "flex",
+  };
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ marginTop: "-2rem", marginBottom: "2rem" }}>
+    <div
+      style={{ display: "flex", flexDirection: "column", position: "relative" }}
+    >
+      {fullscreen && (
+        <AiOutlineFullscreenExit
+          onClick={() => {
+            setFullscreen(false);
+          }}
+          size={40}
+          style={{
+            position: "fixed",
+            color: "red",
+            zIndex: 9999999999,
+            top: 10,
+            right: 10,
+            boxSizing: "border-box",
+            padding: 0,
+            cursor: "pointer",
+          }}
+        />
+      )}
+      <div
+        style={
+          fullscreen
+            ? {
+                position: "fixed",
+                top: 60,
+                zIndex: 999999999,
+                left: "50%",
+                display: "flex",
+                flexDirection: "column",
+                transform: "translate(-50%,0%)",
+                flex: 1,
+                width: "80%",
+              }
+            : {
+                marginTop: "-2rem",
+                marginBottom: "1rem",
+              }
+        }
+      >
         <OptionsMenu
           options={[
             {
@@ -178,70 +215,64 @@ export default function VisualizacaoEmGrupo() {
             },
           ]}
         />
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flex: 1,
-          justifyContent: "flex-end",
-          marginBottom: "2rem",
-        }}
-      >
-        <Button
-          onClick={() => {
-            toastCall("Por favor aguarde", 1000);
-            removeAllLayers();
-            fetch("https://bigdata.idals.com.br/data/status?area=" + area)
-              .then((response) => {
-                if (response.status !== 200) {
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => {
+              toastCall("Por favor aguarde", 1000);
+              removeAllLayers();
+              fetch("https://bigdata.idals.com.br/data/status?area=" + area)
+                .then((response) => {
+                  if (response.status !== 200) {
+                    setFuncionarios([]);
+                    setTimeout(() => {
+                      toastCall("Não existem dados.");
+                    }, 1000);
+
+                    removeAllLayers();
+                  }
+                  response.json().then((data: Array<any>) => {
+                    const funcionariosAux: typeof funcionarios = [];
+
+                    const colors: Record<string, any> = {};
+                    data.forEach((value: any) => {
+                      const newColor = randomColorGenerator(colors);
+                      colors[newColor] = 1;
+                      console.log(newColor);
+
+                      funcionariosAux.push([
+                        value.nome_funcionario,
+                        "#" + newColor,
+                        value.localizacao,
+                        value.date,
+                      ]);
+                      oldColorsLayers.current.push("#" + newColor);
+                      const layer = addVectorLayer(
+                        mapUltimoPonto.current as Map,
+                        "#" + newColor
+                      );
+                      layers.current.push(layer);
+                      drawPoint(value.localizacao, layer);
+                    });
+                    mapUltimoPonto.current?.getView().animate({
+                      center: funcionariosAux[0][2],
+                      zoom: 19,
+                    });
+
+                    setFuncionarios(funcionariosAux);
+                  });
+                })
+                .catch(() => {
                   setFuncionarios([]);
                   setTimeout(() => {
-                    toastCall("Não existem dados.");
+                    toastCall("Ocorreu um erro. Por favor tente mais tarde");
                   }, 1000);
-
                   removeAllLayers();
-                }
-                response.json().then((data: Array<any>) => {
-                  const funcionariosAux: typeof funcionarios = [];
-
-                  const colors: Record<string, any> = {};
-                  data.forEach((value: any) => {
-                    const newColor = randomColorGenerator(colors);
-                    colors[newColor] = 1;
-                    console.log(newColor);
-
-                    funcionariosAux.push([
-                      value.nome_funcionario,
-                      "#" + newColor,
-                      value.localizacao,
-                      value.date,
-                    ]);
-                    oldColorsLayers.current.push("#" + newColor);
-                    const layer = addVectorLayer(
-                      mapUltimoPonto.current as Map,
-                      "#" + newColor
-                    );
-                    layers.current.push(layer);
-                    drawPoint(value.localizacao, layer);
-                  });
-                  mapUltimoPonto.current?.getView().animate({
-                    center: funcionariosAux[0][2],
-                    zoom: 19,
-                  });
-
-                  setFuncionarios(funcionariosAux);
                 });
-              })
-              .catch(() => {
-                setFuncionarios([]);
-                setTimeout(() => {
-                  toastCall("Ocorreu um erro. Por favor tente mais tarde");
-                }, 1000);
-                removeAllLayers();
-              });
-          }}
-          label="Aplicar filtros"
-        />
+            }}
+            label="Aplicar filtros"
+            style={{ alignSelf: "flex-end", marginTop: "1rem" }}
+          />
+        </div>
       </div>
       <div
         style={{
@@ -260,11 +291,28 @@ export default function VisualizacaoEmGrupo() {
             boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
             display: "flex",
             flexDirection: "column",
+            position: "relative",
           }}
         >
+          <AiOutlineFullscreen
+            size={30}
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 10,
+              zIndex: 99,
+              cursor: "pointer",
+              color: "rgb(65, 13, 91)",
+            }}
+            onClick={() => {
+              setFullscreen(true);
+            }}
+          />
           <Title value="Último ponto registrado" />
           <div
-            style={{ flex: 1, position: "relative" }}
+            style={
+              fullscreen ? stylesFullscreen : { flex: 1, position: "relative" }
+            }
             ref={mapRefUltimoPonto as LegacyRef<HTMLDivElement>}
           />
         </Paper>
@@ -294,7 +342,6 @@ export default function VisualizacaoEmGrupo() {
                 size: 0.2,
               },
               { name: "Funcionário", size: 1 },
-              { name: "Telefone", size: 1 },
               { name: "Horário", size: 1 },
             ]}
           />

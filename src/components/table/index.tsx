@@ -1,7 +1,7 @@
 export default function Table({
   ...props
 }: {
-  columns: Array<{ name: any; size: number }>;
+  columns: Array<{ name: any; size: number; style?: React.CSSProperties }>;
   rows: Array<Array<any>>;
 }) {
   return (
@@ -41,7 +41,7 @@ export default function Table({
         </tr>
       </thead>
       <tbody>
-        {props.rows.map((row) => {
+        {props.rows.map((row, index) => {
           return (
             <tr
               style={{
@@ -62,6 +62,7 @@ export default function Table({
                       justifyContent: "center",
                       flex: props.columns[index].size,
                       textAlign: "center",
+                      ...props?.columns[index]?.style,
                     }}
                   >
                     {value}

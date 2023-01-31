@@ -35,6 +35,8 @@ export default function VisualizacaoIndividual() {
     display: "flex",
   };
   const [fullscreen, setFullscreen] = useState<boolean>(false);
+  const [fullscreenLastPoint, setFullscreenLastPoint] =
+    useState<boolean>(false);
   function generateDate() {
     let date = new Date();
     let time: Array<string> = [];
@@ -67,7 +69,9 @@ export default function VisualizacaoIndividual() {
     null
   );
 
-  const [user, setUser] = useState("teixeira");
+  const [user, setUser] = useState("");
+  const userRef = useRef("");
+
   const [funcionarioOptions, setFuncionarioOptions] =
     useState<Array<{ label: string; value: string }>>();
   const data = useRef(generateDate()[2]);
@@ -93,6 +97,8 @@ export default function VisualizacaoIndividual() {
         });
         setFuncionarioOptions(funcionarioOptionsAux);
         funcionariosInfo.current = funcionarioInfosAux;
+        setUser(funcionarioOptionsAux[0]?.value);
+        userRef.current = funcionarioOptionsAux[0]?.value;
       });
     });
   }, []);
@@ -142,8 +148,10 @@ export default function VisualizacaoIndividual() {
               funcionariosInfo.current[user]
             );
             console.info(a.features[0].properties.date);
-            content.innerHTML = `<div><span>Nome: ${user}</span></br><span> </span></br><span>Telefone: ${
-              funcionariosInfo.current[user].telefone
+            content.innerHTML = `<div><span>Nome: ${
+              userRef.current
+            }</span></br><span> </span></br><span>Telefone: ${
+              funcionariosInfo.current[userRef.current].telefone
             }</span></br><span> </span></br><span>Horário: ${
               a.features[0].properties.date.split("T")[1].split(".")[0]
             }</span></div>`;
@@ -165,10 +173,11 @@ export default function VisualizacaoIndividual() {
     <div
       style={{ display: "flex", flexDirection: "column", position: "relative" }}
     >
-      {fullscreen && (
+      {(fullscreen || fullscreenLastPoint) && (
         <AiOutlineFullscreenExit
           onClick={() => {
             setFullscreen(false);
+            setFullscreenLastPoint(false);
           }}
           size={40}
           style={{
@@ -186,7 +195,7 @@ export default function VisualizacaoIndividual() {
           fullscreen
             ? {
                 position: "fixed",
-                top: 60,
+                top: 20,
                 zIndex: 999999999,
                 left: "50%",
                 display: "flex",
@@ -218,6 +227,7 @@ export default function VisualizacaoIndividual() {
               name: "Funcionário:",
               onChange: (newUser: string) => {
                 setUser(newUser);
+                userRef.current = newUser;
               },
               ops: funcionarioOptions,
             },
@@ -225,14 +235,8 @@ export default function VisualizacaoIndividual() {
               type: "selection",
               value: 1,
               name: "Área:",
-              onChange: (newUser: string) => {
-                setUser(newUser);
-              },
-              ops: [
-                { label: "Área Barragem 1", value: 1 },
-                { label: "Marko", value: 2 },
-                { label: "Matheus", value: 3 },
-              ],
+              onChange: (newUser: string) => {},
+              ops: [{ label: "lafaiete", value: 1 }],
             },
             {
               type: "date",
@@ -273,8 +277,8 @@ export default function VisualizacaoIndividual() {
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              rowGap: "0.5rem",
+              flexDirection: "row",
+              columnGap: "1rem",
             }}
           >
             <div
@@ -308,14 +312,26 @@ export default function VisualizacaoIndividual() {
                 Linhas
               </label>
             </div>
-            <div>
+            <div
+              style={
+                fullscreen
+                  ? {
+                      display: "flex",
+                      alignItems: "center",
+                      backgroundColor: "white",
+                      padding: "1rem",
+                      borderRadius: "0.5rem",
+                    }
+                  : { display: "flex", alignItems: "center" }
+              }
+            >
               <label
                 style={{
                   fontSize: "1.3rem",
                   color: "rgb(48, 25, 52)",
                 }}
               >
-                Line gap:
+                Espaçamento entre setas:
               </label>
               <input
                 type="number"
@@ -340,7 +356,20 @@ export default function VisualizacaoIndividual() {
                 }}
               />
             </div>
-            <div>
+            <div
+              style={
+                fullscreen
+                  ? {
+                      display: "flex",
+                      alignItems: "center",
+                      backgroundColor: "white",
+                      padding: "1rem",
+                      borderRadius: "0.5rem",
+                      flex: "r",
+                    }
+                  : { display: "flex", alignItems: "center" }
+              }
+            >
               <label
                 style={{
                   fontSize: "1.3rem",
@@ -398,22 +427,10 @@ export default function VisualizacaoIndividual() {
                   ?.getSource()
                   ?.removeFeature(lastPointTrajetoria.current);
 
-              const dateISOate = new Date(
-                data.current + "T" + timeAte.current
-              ).toISOString();
-              const dateISOde = new Date(
-                data.current + "T" + timeDe.current
-              ).toISOString();
               const finalDate = new Date(data.current + "T" + timeAte.current);
 
               finalDate.setHours(finalDate.getHours() - 3);
-              console.debug({
-                funcionario: user,
-                dataAte: `${data.current}`,
-                dataDe: `${data.current}`,
-                timeDe: `${timeDe.current}`,
-                timeAte: `${timeAte.current}`,
-              });
+
               console.info("oi", finalDate.toISOString());
               drawWMS(
                 wmsTrajetoriaLayer.current as TileLayer<any>,
@@ -464,7 +481,6 @@ export default function VisualizacaoIndividual() {
                   console.debug(mapUltimoPonto?.getLayers());
                 });
               });
-              console.debug(mapTrajetoria?.getLayers());
               if (mapTrajetoria) {
                 drawWMS(
                   wmsTrajetoriaLineLayer.current as TileLayer<any>,
@@ -515,8 +531,22 @@ export default function VisualizacaoIndividual() {
             boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
             display: "flex",
             flexDirection: "column",
+            position: "relative",
           }}
         >
+          <AiOutlineFullscreen
+            size={30}
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              cursor: "pointer",
+              color: "rgb(65, 13, 91)",
+            }}
+            onClick={() => {
+              setFullscreenLastPoint(true);
+            }}
+          />
           <Title
             style={{
               padding: 0,
@@ -526,7 +556,11 @@ export default function VisualizacaoIndividual() {
             value="Último ponto registrado"
           />
           <div
-            style={{ flex: 1, position: "relative" }}
+            style={
+              fullscreenLastPoint
+                ? stylesFullscreen
+                : { flex: 1, position: "relative" }
+            }
             ref={mapRefUltimoPonto as LegacyRef<HTMLDivElement>}
           />
         </Paper>

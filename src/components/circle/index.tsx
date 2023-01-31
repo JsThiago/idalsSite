@@ -1,4 +1,9 @@
-export default function Circle({ ...props }: { color?: string }) {
+export default function Circle({
+  ...props
+}: {
+  color?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       style={{
@@ -9,6 +14,7 @@ export default function Circle({ ...props }: { color?: string }) {
         height: "3rem",
         borderRadius: "100%",
         boxShadow: "0.6px 0.6px  3px 0.4px rgba(0,0,0,0.5)",
+        ...props.style,
       }}
     ></div>
   );
