@@ -6,12 +6,8 @@ import CustomSelect from "../../components/select";
 import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import { GlobalContext } from "../../context/globalContext";
+const regexDevEUI = new RegExp(/[0-9a-fA-F]+$/);
 
-const OPTIONS_MOCK = [
-  { value: 1, label: "Engenheiro" },
-  { value: 2, label: "Visitante" },
-  { value: 3, label: "Vigilante" },
-];
 interface DadosArea {
   nome: string;
 }
@@ -38,13 +34,14 @@ function CadastroDePessoas() {
     Array<{ value: string | number; label: string }>
   >([]);
   useEffect(() => {
-    fetch("http://api.idals.com.br/cracha/deviceProfiles").then((data)=>{
+    fetch("https://api.idals.com.br/cracha/deviceProfiles").then((data)=>{
       data.json().then((networksServerName:Array<NetworkServerName>)=>{
           
           const newDeviceProfileNameOptions:typeof deviceProfileNameOptions = networksServerName.map((network)=>{
             return { label:network.name,value:network.name}
           })
           setDeviceProfileNameOptions(newDeviceProfileNameOptions)
+          setDeviceProfileName(newDeviceProfileNameOptions[0].value)
       })
     })
     fetch("https://api.idals.com.br/area").then((data) => {
@@ -228,9 +225,14 @@ function CadastroDePessoas() {
         >
           <div style={{}}>
             <CustomInput
+              max={16}
               onChange={(text) => {
-                setDevEUI(text);
+                console.info(regexDevEUI.test(text),text,devEUI)
+                if(regexDevEUI.test(text) || text === ""){
+                  setDevEUI(text);
+                } 
               }}
+              value={devEUI}
               label="DevEUI"
               placeholder="Ex: 6e61d507c6284b80"
             />
@@ -246,6 +248,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
+              
               onChange={(text) => {
                 setDescricao(text);
               }}
@@ -285,7 +288,7 @@ function CadastroDePessoas() {
         >
           <Button
             onClick={() => {
-              console.debug("device name",deviceProfileName)
+        
               if (
                 devEUI === "" ||
                 nomeCracha === "" ||
@@ -293,8 +296,13 @@ function CadastroDePessoas() {
                 deviceProfileName === "" ||
                 modelo === ""
               ) {
-                context("Alguns campos possuem valores inválidos");
+                context("Alguns campos estão vazios");
                 return;
+              }
+              console.info("size",devEUI.length)
+              if(!regexDevEUI.test(devEUI) || devEUI.length < 16 ){
+                  context("O campo DevEUI deve ser um hexadecimal de 16 dígitos");
+                  return
               }
               const data = JSON.stringify({
                 devEUI,

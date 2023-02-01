@@ -233,6 +233,7 @@ export default function Vinculos() {
               backgroundColor: "white",
               border: "1px solid #410D5B",
               color: "#410D5B",
+              outline:"none",
               textAlign: "center",
               minWidth: "10rem",
               marginRight: "2rem",

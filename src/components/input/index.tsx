@@ -1,4 +1,6 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useState } from "react";
+const DEFAULT_COLOR = "rgba(0,0,0,0.4)";
+const FOCUS_COLOR = "purple";
 
 export default function CustomInput({
   ...props
@@ -9,7 +11,9 @@ export default function CustomInput({
   onChange?: (text: string) => void;
   value?: string;
   disabled?: boolean;
+  max?:number
 }) {
+  const [actualColor,setActualColor] = useState(DEFAULT_COLOR);
   return (
     <div
       style={{
@@ -21,6 +25,7 @@ export default function CustomInput({
       {props.label && (
         <label
           style={{
+            color:"rgba(0,0,0,0.8)",
             textAlign: "left",
             marginBottom: "1rem",
             fontSize: "1.4rem",
@@ -31,7 +36,16 @@ export default function CustomInput({
         </label>
       )}
       <input
+        maxLength={props.max}
+
         id="input"
+        type={"text"}
+        onFocus={()=>{
+          setActualColor(FOCUS_COLOR)
+        }}
+        onBlur={()=>{
+          setActualColor(DEFAULT_COLOR)
+        }}
         disabled={props.disabled || false}
         value={props.value}
         placeholder={props.placeholder}
@@ -40,10 +54,14 @@ export default function CustomInput({
           props?.onChange && props.onChange(text);
         }}
         style={{
-          borderRadius: 5,
+
           fontSize: "1rem",
-          padding: "0.7rem",
-          border: "1px solid black",
+          padding: "0.3rem",
+          borderTop:"none",
+          borderLeft:"none",
+          borderRight:"none",
+          outline:"none",
+          borderBottom: `1px solid ${actualColor}`,
           ...props.style,
         }}
       />
