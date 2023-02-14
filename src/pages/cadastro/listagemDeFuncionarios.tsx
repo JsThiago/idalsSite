@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import Button from "../../components/button";
 import Modal from "../../components/modal";
 import Paper from "../../components/paper";
@@ -10,6 +10,8 @@ import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import { DadosFuncionarios } from "../../types";
 import { relative } from "path";
+import DeleteConfirm from "../../components/deleteConfirm";
+import breakLine from "../../utils/breakLine";
 interface DadosRelacoes {
   crachaId: string;
   funcionarioId: number;
@@ -21,6 +23,9 @@ interface DadosCracha {
 }
 export default function ListagemDeFuncionarios() {
   const [openModal, setOpenModal] = useState(false);
+  const [functionDelete,setFunctionDelete] = useState<()=>void>(()=>()=>{}) 
+  const [openModalDelete,setOpenModalDelete] = useState(false);
+  const [subTitleDelete,setSubTitleDelete] = useState<string|Array<React.ReactElement>>("")
   const [funcionarioVincular, setFuncionarioVincular] = useState<
     string | number
   >();
@@ -78,6 +83,12 @@ export default function ListagemDeFuncionarios() {
           size={20}
           style={{ cursor: "pointer" }}
           onClick={() => {
+            setOpenModalDelete(true);
+            setSubTitleDelete(
+              breakLine(
+                `Tem certeza que deseja remover o funcionário:<br/>
+            ${value.nome}?`))
+            setFunctionDelete(()=>()=>{
             fetch("https://api.idals.com.br/funcionario/" + key, {
               method: "DELETE",
             }).then((response) => {
@@ -87,7 +98,8 @@ export default function ListagemDeFuncionarios() {
                 delete funcionariosCopy[+key];
                 setFuncionarios(funcionariosCopy);
               } else toastCall("Erro, Por favor tente mais tarde");
-            });
+            })
+          });
           }}
         />,
       ]);
@@ -98,20 +110,12 @@ export default function ListagemDeFuncionarios() {
   useEffect(attRows, [attRows, funcionarios]);
   return (
     <>
-      <Modal visibility={openModal}>
-        <Paper
-          style={{
-            display: "flex",
-            width: "50rem",
-            height: "30rem",
-            position: "relative",
-            flexDirection: "column",
-            borderRadius: "2px",
-            paddingBottom: "2rem",
-            boxShadow: "1px 1px 4px rgba(0,0,0,0.3)",
-          }}
-        ></Paper>
-      </Modal>
+      <DeleteConfirm deleteFunc={functionDelete} onClose={()=>{
+        setOpenModalDelete(false);
+      }}
+      visibility={openModalDelete}
+      subtitle={subTitleDelete}
+      />
 
       <Paper
         style={{

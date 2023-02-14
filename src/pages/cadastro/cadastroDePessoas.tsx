@@ -99,10 +99,12 @@ function CadastroDePessoas() {
               }}
               label="Nome"
               placeholder="Ex: José da silva"
+              value={nome}
             />
           </div>
           <div style={{}}>
             <CustomInput
+             value={matricula}
               onChange={(text) => {
                 setMatricula(text);
               }}
@@ -112,6 +114,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
+             value={telefone}
               label="Telefone"
               onChange={(text) => {
                 setTelefone(text);
@@ -121,6 +124,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
+             value={login}
               label="Login"
               onChange={(text) => {
                 setLogin(text);
@@ -130,6 +134,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
+             value={senha}
               label="Senha"
               onChange={(text) => {
                 setSenha(text);
@@ -180,6 +185,14 @@ function CadastroDePessoas() {
                 if (response.status === 201)
                   context("Cadastro realizado com sucesso");
                 else context("Falha ao realizar o cadastro");
+                return
+              }).then(()=>{
+                setNome("");
+                setMatricula("");
+                setTelefone("");
+                setLogin("");
+                setSenha("");
+                setArea(optionsArea[0].value as string)
               });
               context("Cadastro realizado com sucesso");
             }}
@@ -225,6 +238,7 @@ function CadastroDePessoas() {
         >
           <div style={{}}>
             <CustomInput
+
               max={16}
               onChange={(text) => {
                 console.info(regexDevEUI.test(text),text,devEUI)
@@ -252,6 +266,7 @@ function CadastroDePessoas() {
               onChange={(text) => {
                 setDescricao(text);
               }}
+              value={descricao}
               label="Descrição"
               placeholder="Ex: Beitian 220"
             />
@@ -270,6 +285,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
+              value={modelo}
               onChange={(text) => {
                 setModelo(text);
               }}
@@ -337,6 +353,14 @@ function CadastroDePessoas() {
                     return
                   }
                   context("Erro, por favor tente mais tarde");
+                }).then(()=>{
+                  setDevEUI("");
+                  setNomeCracha("");
+                  setDescricao("");
+                  setDeviceProfileName(deviceProfileNameOptions[0].value);
+                  setModelo("");
+
+
                 })
                 .catch((e) => {
                   console.error("err",e)

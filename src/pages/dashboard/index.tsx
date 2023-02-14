@@ -3,6 +3,8 @@ import Button from "../../components/button";
 import Card from "../../components/card";
 import ElipsePerson from "../../components/card/icons/people";
 import Circle from "../../components/circle";
+import DatePicker from "../../components/datePicker";
+import MultiSelect from "../../components/multiSelect";
 import Paper from "../../components/paper";
 import SubTitle from "../../components/subTitle";
 import Table from "../../components/table";
@@ -18,6 +20,8 @@ interface DadosLocalizacao {
 export default function Dashboard() {
   const [areas, setAreas] = useState<Record<string | number, any>>({});
   const [totalPessoas, setTotalDePessoas] = useState<number>(0);
+  const [dataInicio,setDataInicio] = useState("2010-01-01");
+  const [dataFim,setDataFim] = useState((new Date()).toISOString().split("T")[0]);
   const [baterias, setBaterias] = useState<
     Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
   >({});
@@ -28,14 +32,27 @@ export default function Dashboard() {
   const [rows, setRows] = useState<Record<string, Array<Array<any>>>>({
     Todas: [],
   });
+  const [areasOptions,setAreasOptions] = useState<Record<string|number,string|number>>({});
+  const [areasSelectedFilter,setAreasSelectedFilter] = useState<Record<string|number,string|number>>({todos:"Todos"})  
+
+  function filterArea(areaName:string){
+  if(areaName in areasSelectedFilter || "todos" in areasSelectedFilter){
+      return true;
+    }
+    return false
+  }
   useEffect(() => {
     fetch("https://api.idals.com.br/localizacao?tipo=area").then((resp) => {
       resp.json().then((data: Array<DadosLocalizacao>) => {
         const areasAux: typeof areas = {};
+        const areasOptionsAux : typeof areasOptions = {};
         data.forEach((localizacao) => {
           areasAux[localizacao.id] = { ...localizacao };
+          areasOptionsAux[localizacao.nome] = localizacao.nome
         });
         setAreas(areasAux);
+        setAreasOptions(areasOptionsAux)
+        console.info(areasOptionsAux)
       });
     });
   }, []);
@@ -53,6 +70,7 @@ export default function Dashboard() {
     };
     const promises = Promise.all(
       Object.entries(areas).map(async ([keys, value], index) => {
+        if(!filterArea(value.nome)) return
         newRows[value.nome] = [];
         newBaterias[value.nome as string] = {
           amarelo: 0,
@@ -61,18 +79,13 @@ export default function Dashboard() {
         };
 
         const response = await fetch(
-          "https://bigdata.idals.com.br/data/status?area=" + keys
+          `https://bigdata.idals.com.br/data/status?de=${dataInicio}&area=${keys}`
         );
         const json = await response.json();
 
         json.forEach((info: any, index: number) => {
-          console.info(
-            areas,
-            value.nome,
-            index,
-            "bateria: ",
-            calcularPercentBateria(info.bateria)
-          );
+        
+          if(info.funcionario === null) return;
           let color: string | undefined = "";
           if (calcularPercentBateria(info.bateria) > 12) {
             newBaterias[value.nome as string].verde += 1;
@@ -88,12 +101,12 @@ export default function Dashboard() {
             color = "#ECD03B";
           }
           newRows[value.nome].push([
-            <Circle color={color} style={{ width: "2rem", height: "2rem" }} />,
+            <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
             info.nome_funcionario,
             info.funcionario.matricula,
           ]);
           newRows["Todas"].push([
-            <Circle color={color} style={{ width: "2rem", height: "2rem" }} />,
+            <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
             info.nome_funcionario,
             info.funcionario.matricula,
           ]);
@@ -110,14 +123,14 @@ export default function Dashboard() {
         colorsUsed[newColorRGB] = 1;
       })
     );
-    console.info(newBaterias);
+
     setBaterias(newBaterias);
     setRows(newRows);
     promises.then(() => {
       setDataCards(dataCardsAux);
       setTotalDePessoas(totalDePessoasAux);
     });
-  }, [areas]);
+  }, [areas,areasSelectedFilter,dataInicio,dataFim]);
   return (
     <div
       style={{
@@ -138,57 +151,110 @@ export default function Dashboard() {
           flex: 1,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
           <div>
-            <Title value="Pessoas na empresa" />
-          </div>
+              <Title value="Pessoas na empresa" />
+            </div>
+        <div style={{display:"flex",flexDirection:"row"}}>
+          <div style={{flex:1}}>
           <SubTitle
-            style={{
-              color: "#A6A6A6",
-              fontSize: "1.2rem",
-              marginLeft: "3rem",
-              marginBottom: "2rem",
-              marginTop: 0,
-            }}
-            value="Atualização do estado dos crachás na mina"
-          />
+              style={{
+                color: "#A6A6A6",
+                fontSize: "1.2rem",
+                marginLeft: "3rem",
+                marginBottom: "2rem",
+                marginTop: 0,
+              }}
+              value="Filtros"
+            />
+            <div style={{display:"flex",flexDirection:"column",flex:1,marginLeft:"4rem",rowGap:"2rem"}}>
+              <div><DatePicker onChange={(value)=>{
+                setDataInicio(value)
+              }} defaultValue={dataInicio} label="A partir de"/></div>
+              {
+               /*
+                <div><DatePicker onChange={(value)=>{
+                setDataFim(value)
+              }} defaultValue={dataFim} label="Até"/></div>
+              */
+              }
+              <div style={{flex:1,display:"flex",flexDirection:"row",alignItems:"center",width:"80%"}}>
+                <label style={{marginRight:"1rem"}} htmlFor="areas-multselect">Áreas</label>
+                <MultiSelect selected={areasSelectedFilter}
+                onRemoveAll={()=>{
+                  setAreasSelectedFilter({})
+                }}
+                key="areas-multselect"
+                onRemove={(value)=>{
+                    const areasSelectedFilterCopy = {...areasSelectedFilter};
+                    delete areasSelectedFilterCopy[value[0]]
+                    setAreasSelectedFilter(areasSelectedFilterCopy)
+                }}
+                onSelectAll={()=>{
+                    setAreasSelectedFilter({todos:"Todos"});
+                }} onSelect={(newValue)=>{
+                   setAreaSelected("Todas")
+                   if("todos" in areasSelectedFilter){
+                    setAreasSelectedFilter({[newValue[0]]:newValue[1]})
+                    return
+                   }
+                   setAreasSelectedFilter({
+                    ...areasSelectedFilter,
+                    [newValue[0]]:newValue[1]})
+                }} options={areasOptions}/></div>
+            </div>
+    
+          </div>
           <div
             style={{
-              marginLeft: "3rem",
-              marginRight: "2rem",
+              display: "flex",
+              flex:1,
+              flexDirection: "column",
             }}
           >
-            <Card
-              id="card-total-pessoas"
-              styleLegenda={{ marginBottom: "2.3rem" }}
-              color="#F5E8A4"
-              onClick={(e) => {
-                setAreaSelected("Todas");
-              }}
-              number={totalPessoas}
+          
+            <SubTitle
               style={{
-                minWidth: "13rem",
-                backgroundColor: "#F5E8A4",
-                position: "relative",
+                color: "#A6A6A6",
+                fontSize: "1.2rem",
+                marginLeft: "3rem",
+                marginBottom: "2rem",
+                marginTop: 0,
               }}
-              Title={() => (
-                <div
-                  style={{
-                    display: "flex",
-                    alignSelf: "flex-start",
-                    marginTop: "2rem",
-                    marginLeft: "2rem",
-                  }}
-                >
-                  <ElipsePerson />
-                </div>
-              )}
+              value="Atualização do estado dos crachás na mina"
             />
+            <div
+              style={{
+                marginLeft: "3rem",
+                marginRight: "2rem",
+              }}
+            >
+              <Card
+                id="card-total-pessoas"
+                styleLegenda={{ marginBottom: "2.3rem" }}
+                color="#F5E8A4"
+                onClick={(e) => {
+                  setAreaSelected("Todas");
+                }}
+                number={totalPessoas}
+                style={{
+                  minWidth: "13rem",
+                  backgroundColor: "#F5E8A4",
+                  position: "relative",
+                }}
+                Title={() => (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignSelf: "flex-start",
+                      marginTop: "2rem",
+                      marginLeft: "2rem",
+                    }}
+                  >
+                    <ElipsePerson />
+                  </div>
+                )}
+              />
+            </div>
           </div>
         </div>
         <div
@@ -225,19 +291,21 @@ export default function Dashboard() {
               >
                 {dataCards
                   .sort((a, b) => +(a.quant < b.quant))
-                  .map((data, index) => (
-                    <Card
-                      onClick={(e) => {
-                        console.info(rows);
-                        setAreaSelected(e);
-                      }}
-                      id={`${data.nome}-card-${data.quant}-${data.color}`}
-                      number={data.quant}
-                      title={data.nome}
-                      color={data.color}
-                      titleColor={data.color}
-                    ></Card>
-                  ))}
+                  .map((data, index) =>{ 
+                    if(filterArea(data.nome))
+                      return (
+                      <Card
+                        onClick={(e) => {
+                      
+                          setAreaSelected(e);
+                        }}
+                        id={`${data.nome}-card-${data.quant}-${data.color}`}
+                        number={data.quant}
+                        title={data.nome}
+                        color={data.color}
+                        titleColor={data.color}
+                      ></Card>
+                    )})}
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { LegacyRef, useEffect, useRef, useState } from "react";
+import React, { LegacyRef, useEffect, useRef, useState } from "react";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
 import { useToast } from "../toast";
@@ -7,6 +7,7 @@ function OptionSelected({
 }: {
   op: string | number;
   onRemove?: () => void;
+
 }) {
   return (
     <div
@@ -72,6 +73,7 @@ export default function MultiSelect({
   onRemoveAll?: () => void;
   onSelectAll?: () => void;
   limit?: number;
+  style?:React.CSSProperties
 }) {
   const inputRef = useRef<HTMLDivElement>();
 
@@ -116,6 +118,8 @@ export default function MultiSelect({
 
         alignItems: "center",
         padding: "0.5rem 0rem .5rem .5rem",
+        ...props.style
+      
       }}
     >
       <div
@@ -165,7 +169,7 @@ export default function MultiSelect({
           backgroundColor: "white",
           position: "absolute",
           height: "fit-content",
-
+       
           paddingBottom: "1rem",
           zIndex: 999,
           maxHeight: "200px",
@@ -176,7 +180,8 @@ export default function MultiSelect({
           boxShadow: "0.1px 0.1px  1px 0.5px rgba(0,0,0,0.2)",
           display: "flex",
           visibility: "hidden",
-          overflow: "scroll",
+          overflow: "auto",
+          
           right: 0,
         }}
       >
@@ -196,6 +201,7 @@ export default function MultiSelect({
                 cursor: "pointer",
                 height: "fit-content",
                 maxWidth: "100%",
+              
                 padding: "0.5rem",
                 margin: "0 0.5rem",
                 marginTop: "0.5rem",

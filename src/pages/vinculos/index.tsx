@@ -1,13 +1,14 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import Button from "../../components/button";
 import Modal from "../../components/modal";
+import DeleteConfirm from "../../components/deleteConfirm";
 import Paper from "../../components/paper";
 import CustomSelect from "../../components/select";
-import Switch from "../../components/switch";
 import { RxCross2 } from "react-icons/rx";
 import { MdDeleteOutline } from "react-icons/md";
 import Table from "../../components/table";
 import Title from "../../components/title";
+import breakLine from "../../utils/breakLine"
 import { toastContext } from "../../components/toast";
 import { DadosFuncionarios } from "../../types";
 interface DadosRelacoes {
@@ -19,8 +20,16 @@ interface DadosCracha {
   devEUI: string;
   nome: string;
 }
+
+interface DadosSemRelacoes {
+  funcionarios:Array<DadosFuncionarios>;
+  crachas:Array<DadosCracha>;
+} 
 export default function Vinculos() {
   const [openModal, setOpenModal] = useState(false);
+  const [functionDelete,setFunctionDelete] = useState<()=>void>(()=>()=>{}) 
+  const [openModalDelete,setOpenModalDelete] = useState(false); 
+  const [subTitleDelete,setSubTitleDelete] = useState<string|Array<React.ReactElement>>("")
   const [relacoes, setRelacoes] = useState<Array<DadosRelacoes>>([]);
   const [funcionarioVincular, setFuncionarioVincular] = useState<
     string | number
@@ -37,6 +46,28 @@ export default function Vinculos() {
   >([]);
   const [rows, setRows] = useState<Array<[string, string, JSX.Element]>>([]);
   const toastCall = useContext(toastContext).toastCall as Function;
+  const fetchSemRelacoes = ()=>{
+    fetch("https://api.idals.com.br/semRelacoes").then((response) => {
+    const crachasOptionsAux: typeof crachasOptions = [];
+    response.json().then((dados: DadosSemRelacoes) => {
+      const funcionariosAux: typeof funcionarios = {};
+      const funcionariosOptionsAux: typeof funcionariosOptions = [];
+      dados.funcionarios.forEach((funcionario) => {
+        funcionariosAux[funcionario.id] = funcionario;
+        funcionariosOptionsAux.push({
+          value: funcionario.id,
+          label: funcionario.nome,
+        });
+      });
+      setFuncionariosOptions(funcionariosOptionsAux);
+      setFuncionarioVincular(funcionariosOptionsAux[0].value);
+      dados.crachas.forEach((cracha) => {
+        crachasOptionsAux.push({ value: cracha.devEUI, label: cracha.nome });
+      });
+      setCrachasOptions(crachasOptionsAux);
+      setCrachaVincular(crachasOptionsAux[0].value);
+    });
+  })};
   useEffect(() => {
     fetch("https://api.idals.com.br/funcionario").then((response) => {
       response.json().then((funcionariosValues: Array<DadosFuncionarios>) => {
@@ -49,24 +80,12 @@ export default function Vinculos() {
             label: funcionario.nome,
           });
         });
-        setFuncionariosOptions(funcionariosOptionsAux);
-        setFuncionarioVincular(funcionariosOptionsAux[0].value);
         setFuncionarios(funcionariosAux);
       });
     });
     fetch("https://api.idals.com.br/relacoes").then((response) => {
       response.json().then((relacoes: Array<DadosRelacoes>) => {
         setRelacoes(relacoes);
-      });
-    });
-    fetch("https://api.idals.com.br/cracha").then((response) => {
-      const crachasOptionsAux: typeof crachasOptions = [];
-      response.json().then((crachas: Array<DadosCracha>) => {
-        crachas.forEach((cracha) => {
-          crachasOptionsAux.push({ value: cracha.devEUI, label: cracha.nome });
-        });
-        setCrachasOptions(crachasOptionsAux);
-        setCrachaVincular(crachasOptionsAux[0].value);
       });
     });
   }, []);
@@ -80,18 +99,25 @@ export default function Vinculos() {
           <MdDeleteOutline
             size={20}
             style={{ cursor: "pointer" }}
-            onClick={() => {
+            onClick={
+              ()=>{
+                setOpenModalDelete(true)
+                setSubTitleDelete(
+                  breakLine(
+                    `Tem certeza que deseja remover a relação:<br/>
+                ${funcionarios[relacao.funcionarioId].nome} - ${relacao.crachaId}?`))
+                setFunctionDelete(()=>() => {
               fetch("https://api.idals.com.br/relacoes/" + relacao.crachaId, {
                 method: "DELETE",
               }).then((response) => {
-                if (response.status === 200) {
+                if (response.status === 200) {   
                   toastCall("Vínculo desfeito com sucesso");
                   const relacoesCopy = [...relacoes];
                   relacoesCopy.splice(index, 1);
                   setRelacoes(relacoesCopy);
                 } else toastCall("Erro, Por favor tente mais tarde");
               });
-            }}
+            })}}
           />,
         ]);
     });
@@ -100,6 +126,10 @@ export default function Vinculos() {
   useEffect(attRows, [attRows, funcionarios, relacoes]);
   return (
     <>
+      <DeleteConfirm deleteFunc={functionDelete} subtitle={subTitleDelete} onClose={()=>{
+        setOpenModalDelete(false);
+
+      }} visibility={openModalDelete}/>
       <Modal visibility={openModal}>
         <Paper
           style={{
@@ -151,7 +181,6 @@ export default function Vinculos() {
           <div
             style={{
               padding: "2rem",
-
               justifyContent: "flex-end",
               display: "flex",
             }}
@@ -181,6 +210,7 @@ export default function Vinculos() {
                           createdAt: new Date().toString(),
                         },
                       ]);
+
                       setOpenModal(false);
                     }
                   })
@@ -227,6 +257,7 @@ export default function Vinculos() {
         >
           <Button
             onClick={() => {
+              fetchSemRelacoes();
               setOpenModal(true);
             }}
             style={{

@@ -431,7 +431,7 @@ export default function VisualizacaoIndividual() {
 
               finalDate.setHours(finalDate.getHours() - 3);
 
-              console.info("oi", finalDate.toISOString());
+      
               drawWMS(
                 wmsTrajetoriaLayer.current as TileLayer<any>,
                 {

@@ -6,10 +6,10 @@ import Paper from "../../components/paper";
 import CustomSelect from "../../components/select";
 import Table from "../../components/table";
 import Title from "../../components/title";
-import { toastContext } from "../../components/toast";
+import { toastContext, useToast } from "../../components/toast";
 
 export default function CadastrarPontosDeInteresse() {
-  const callToast = useContext(toastContext).toastCall as Function;
+  const callToast = useToast().toastCall as Function;
   return (
     <Paper
       style={{

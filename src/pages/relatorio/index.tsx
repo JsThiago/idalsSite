@@ -185,7 +185,6 @@ export default function Relatorio() {
           flex: 1,
           minHeight: "100vh",
           backgroundColor: "white",
-
           overflow: "scroll",
         }}
       >

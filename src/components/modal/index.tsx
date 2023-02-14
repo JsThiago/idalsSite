@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import React, { useContext } from "react";
 import Button from "../button";
 import CustomInput from "../input";
 import Paper from "../paper";
@@ -12,9 +12,12 @@ export default function Modal({
   visibility?: boolean;
   onConfirm?: () => void;
   children?: JSX.Element;
+  style?:React.CSSProperties
+  onClickOutside?:()=>void
 }) {
   return (
     <div
+    onClick={props?.onClickOutside}
       style={{
         visibility: props.visibility ? "visible" : "hidden",
         position: "fixed",
@@ -22,15 +25,21 @@ export default function Modal({
         right: 0,
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.4)",
-        zIndex: 999,
+        zIndex: 9999,
         width: "100vw",
         display: "flex",
         height: "100vh",
+    
         alignItems: "center",
         justifyContent: "center",
+        ...props.style
       }}
     >
+      <div onClick={(e)=>{
+          e.stopPropagation();
+      }} >
       {props.children}
+      </div>
     </div>
   );
 }

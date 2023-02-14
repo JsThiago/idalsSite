@@ -7,7 +7,7 @@ export default function Circle({
   return (
     <div
       style={{
-        width: "3rem",
+        minWidth: "3rem",
         background:
           props.color ||
           "linear-gradient(0deg, #27BC02, #27BC02), linear-gradient(0deg, #27BC02, #27BC02), #27BC02",

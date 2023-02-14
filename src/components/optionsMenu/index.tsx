@@ -2,6 +2,7 @@ import Paper from "../paper";
 import CustomSelect from "../select";
 import Timepicker from "../timepicker";
 import "./styles.css";
+import DatePicker from "../datePicker"
 export default function OptionsMenu({
   ...props
 }: {
@@ -67,16 +68,10 @@ export default function OptionsMenu({
           alignItems: "center",
         }}
       >
-        <span style={{ marginRight: "1rem" }}>{name}</span>
-        <input
-          onChange={(e) => {
-            onChange && onChange(e.target.value);
-          }}
-          defaultValue={value}
-          id={name}
-          type="date"
-          style={{ padding: "0.2rem 0" }}
-        />
+    
+        <DatePicker defaultValue={value} label={name} id={name} style={{ padding: "0.2rem 0" }} onChange={(e) => {
+            onChange && onChange(value as string);
+          }}/>
       </Paper>
     );
   }

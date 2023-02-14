@@ -10,6 +10,8 @@ import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import { DadosFuncionarios } from "../../types";
 import { relative } from "path";
+import breakLine from "../../utils/breakLine";
+import DeleteConfirm from "../../components/deleteConfirm";
 
 interface DadosCracha {
   devEUI: string;
@@ -21,7 +23,9 @@ interface DadosCracha {
 }
 export default function ListagemDeCrachas() {
   const [openModal, setOpenModal] = useState(false);
-
+  const [functionDelete,setFunctionDelete] = useState<()=>void>(()=>()=>{}) 
+  const [openModalDelete,setOpenModalDelete] = useState(false); 
+  const [subTitleDelete,setSubTitleDelete] = useState<string|Array<React.ReactElement>>("")
   const [crachas, setCrachas] = useState<Array<DadosCracha>>([]);
   const [rows, setRows] = useState<
     Array<[JSX.Element, string, string, string, string, JSX.Element]>
@@ -49,13 +53,22 @@ export default function ListagemDeCrachas() {
           size={20}
           style={{ cursor: "pointer" }}
           onClick={() => {
-            fetch("https://api.idals.com.br/funcionario/" + cracha.devEUI, {
+            setOpenModalDelete(true);
+            setSubTitleDelete(
+              breakLine(
+                `Tem certeza que deseja remover o crachá:<br/>
+            ${cracha.nome}?`))
+            setFunctionDelete(()=>()=>{
+            fetch("https://api.idals.com.br/cracha/" + cracha.devEUI, {
               method: "DELETE",
             }).then((response) => {
               if (response.status === 200) {
+                const crachasAux = [...crachas];
+                crachasAux.splice(index,1);
+                setCrachas(crachasAux);
                 toastCall("Crachá removido com sucesso");
               } else toastCall("Erro, Por favor tente mais tarde");
-            });
+            })});
           }}
         />,
       ]);
@@ -66,6 +79,10 @@ export default function ListagemDeCrachas() {
   useEffect(attRows, [attRows]);
   return (
     <>
+    <DeleteConfirm deleteFunc={functionDelete} subtitle={subTitleDelete} onClose={()=>{
+        setOpenModalDelete(false);
+
+      }} visibility={openModalDelete}/>
       <Modal visibility={openModal}>
         <Paper
           style={{
