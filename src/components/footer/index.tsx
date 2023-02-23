@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
 import Paper from "../paper";
-
+import version from "../../version.json"
 export default function Footer({ ...props }: { style?: CSSProperties }) {
   return (
     <footer
@@ -20,7 +20,7 @@ export default function Footer({ ...props }: { style?: CSSProperties }) {
           justifyContent: "flex-end",
         }}
       >
-        <small>&copy; Copyright {new Date().getFullYear()}&nbsp;, Idals</small>
+        <small>&copy; Copyright {new Date().getFullYear()}&nbsp;, Idals ver {version.version}</small>
       </Paper>
     </footer>
   );

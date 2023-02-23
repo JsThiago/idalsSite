@@ -26,15 +26,28 @@ export default function Dashboard() {
     Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
   >({});
   const [dataCards, setDataCards] = useState<
-    Array<{ nome: string; quant: number; color: string }>
-  >([]);
+    Record<string,{ nome: string; quant: number; color: string }>
+  >({});
   const [areaSelected, setAreaSelected] = useState<string>("Todas");
   const [rows, setRows] = useState<Record<string, Array<Array<any>>>>({
     Todas: [],
   });
   const [areasOptions,setAreasOptions] = useState<Record<string|number,string|number>>({});
   const [areasSelectedFilter,setAreasSelectedFilter] = useState<Record<string|number,string|number>>({todos:"Todos"})  
+  
+  function rowsAssembly(){
+      const rowsFinal:Array<Array<any>> = []
+      if(areaSelected !== "Todas") return rows[areaSelected]
+      if("todos" in areasSelectedFilter) return rows["Todas"]
+      Object.keys(rows).forEach((key,index)=>{
+        if(key in areasSelectedFilter){
+          rowsFinal.push(...rows[key])
+        }
 
+      })
+      console.log("rowx",rowsFinal)
+      return rowsFinal;
+  } 
   function filterArea(areaName:string){
   if(areaName in areasSelectedFilter || "todos" in areasSelectedFilter){
       return true;
@@ -57,7 +70,7 @@ export default function Dashboard() {
     });
   }, []);
   useEffect(() => {
-    const dataCardsAux: typeof dataCards = [];
+    const dataCardsAux: typeof dataCards = {};
     let totalDePessoasAux = 0;
     const colorsUsed: Record<string, any> = {};
     const newRows: typeof rows = { Todas: [] };
@@ -113,12 +126,13 @@ export default function Dashboard() {
         });
         totalDePessoasAux += json?.length;
         const newColor = randomColorGeneratorRGBA(colorsUsed);
-        const newColorRGB = `${newColor.r}, ${newColor.g}, ${newColor.b}`;
-        dataCardsAux.push({
+        console.log(dataCards[value.nome]?.color)
+        const newColorRGB = dataCards[value?.nome]?.color || `${newColor.r}, ${newColor.g}, ${newColor.b}` ;
+        dataCardsAux[value?.nome]={
           nome: value?.nome,
           quant: json?.length,
           color: newColorRGB,
-        });
+        };
 
         colorsUsed[newColorRGB] = 1;
       })
@@ -130,7 +144,8 @@ export default function Dashboard() {
       setDataCards(dataCardsAux);
       setTotalDePessoas(totalDePessoasAux);
     });
-  }, [areas,areasSelectedFilter,dataInicio,dataFim]);
+  }, [areas]);
+
   return (
     <div
       style={{
@@ -167,7 +182,7 @@ export default function Dashboard() {
               value="Filtros"
             />
             <div style={{display:"flex",flexDirection:"column",flex:1,marginLeft:"4rem",rowGap:"2rem"}}>
-              <div><DatePicker onChange={(value)=>{
+              <div><DatePicker onBlur={(value)=>{
                 setDataInicio(value)
               }} defaultValue={dataInicio} label="A partir de"/></div>
               {
@@ -277,7 +292,7 @@ export default function Dashboard() {
             />
           </div>
           <div>
-            {dataCards.length > 0 && (
+            {Object.keys(dataCards).length > 0 && (
               <div
                 style={{
                   display: "grid",
@@ -289,10 +304,11 @@ export default function Dashboard() {
                   flex: 1,
                 }}
               >
-                {dataCards
+                {Object.values(dataCards)
                   .sort((a, b) => +(a.quant < b.quant))
                   .map((data, index) =>{ 
                     if(filterArea(data.nome))
+           
                       return (
                       <Card
                         onClick={(e) => {
@@ -422,7 +438,7 @@ export default function Dashboard() {
                 { size: 1, name: "Nome do funcionário" },
                 { name: "Matrícula", size: 0.5 },
               ]}
-              rows={rows[areaSelected] || []}
+              rows={[...rowsAssembly()]}
             />
           </div>
         </Paper>

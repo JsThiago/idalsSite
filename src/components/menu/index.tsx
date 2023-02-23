@@ -8,12 +8,14 @@ import PinGps from "./icons/pinGps";
 import Plus from "./icons/plus";
 import Relatorio from "./icons/relatorio";
 import TwoPersons from "./icons/twoPersons";
+import {RxExit} from "react-icons/rx"
 import "./styles.css";
-export default function Menu() {
+export default function Menu({onExit}:{onExit:()=>void}) {
   const path = useLocation().pathname;
   const routes: Array<{
     name: string;
     path: string;
+    function?:()=>void,
     Icon: ({ color }: { color: string }) => JSX.Element;
   }> = [
     {
@@ -47,6 +49,12 @@ export default function Menu() {
       path: "relatorio",
       Icon: ({ color }) => <Relatorio color={color} />,
     },
+    {
+      name:"sair",
+      path:"",
+      function:onExit,
+      Icon:()=>  <RxExit/>
+    }
   ];
   const styleSelect: CSSProperties = {
     backgroundColor: "white",
@@ -97,6 +105,9 @@ export default function Menu() {
         {routes.map((route) => (
           <>
             <Link
+              onClick={()=>{
+                route.function && route.function();
+              }}
               style={{
                 all: "unset",
                 cursor: "pointer",
@@ -108,7 +119,7 @@ export default function Menu() {
             >
               <h2
                 style={
-                  path === "/" + route.path
+                  (path === "/" + route.path && route.path !=="")
                     ? styleSelect
                     : {
                         paddingTop: "1rem",
@@ -121,7 +132,7 @@ export default function Menu() {
                 }
               >
                 <route.Icon
-                  color={path === "/" + route.path ? "#410D5B" : "white"}
+                  color={(path === "/" + route.path) ? "#410D5B" : "white"}
                 />
                 <span
                   className="menu-options-text"

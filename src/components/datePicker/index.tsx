@@ -1,8 +1,9 @@
 
 import React from  "react"
-export default function DatePicker({id,style,label,defaultValue,onChange}:{
+export default function DatePicker({id,style,label,defaultValue,onChange,onBlur}:{
     id?:string,
     onChange?:(value:string)=>void,
+    onBlur?:(value:string)=>void
     label?:string,
     defaultValue?:string;
     style?:React.CSSProperties
@@ -13,6 +14,9 @@ export default function DatePicker({id,style,label,defaultValue,onChange}:{
         <input
           onChange={(e) => {
             onChange && onChange(e.target.value);
+          }}
+          onBlur={(e)=>{
+            onBlur && onBlur(e.target.value)
           }}
           defaultValue={defaultValue}
           id={id}

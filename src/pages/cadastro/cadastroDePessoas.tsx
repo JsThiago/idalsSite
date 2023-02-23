@@ -4,7 +4,7 @@ import CustomInput from "../../components/input";
 import Paper from "../../components/paper";
 import CustomSelect from "../../components/select";
 import Title from "../../components/title";
-import { toastContext } from "../../components/toast";
+import { toastContext, useToast } from "../../components/toast";
 import { GlobalContext } from "../../context/globalContext";
 const regexDevEUI = new RegExp(/[0-9a-fA-F]+$/);
 
@@ -17,7 +17,7 @@ interface NetworkServerName{
   id:string
 }
 function CadastroDePessoas() {
-  const context = useContext(toastContext).toastCall as Function;
+  const toastCall = useToast().toastCallTopRight as Function;
   const [nome, setNome] = useState<string>("");
   const [telefone, setTelefone] = useState<string>("");
   const [matricula, setMatricula] = useState<string>("");
@@ -171,20 +171,20 @@ function CadastroDePessoas() {
                 login === "" ||
                 senha === ""
               ) {
-                context("Existem campos com valores inválidos");
+                toastCall("Existem campos com valores inválidos");
                 return;
               }
               console.log(area);
               const body = { nome, telefone, matricula, login, senha, area };
-              context("Realizando cadastro");
+              toastCall("Realizando cadastro");
               fetch("https://api.idals.com.br/funcionario", {
                 method: "POST",
                 body: JSON.stringify(body),
                 headers: { "content-type": "application/json" },
               }).then((response) => {
                 if (response.status === 201)
-                  context("Cadastro realizado com sucesso");
-                else context("Falha ao realizar o cadastro");
+                toastCall("Cadastro realizado com sucesso");
+                else toastCall("Falha ao realizar o cadastro");
                 return
               }).then(()=>{
                 setNome("");
@@ -194,7 +194,7 @@ function CadastroDePessoas() {
                 setSenha("");
                 setArea(optionsArea[0].value as string)
               });
-              context("Cadastro realizado com sucesso");
+              toastCall("Cadastro realizado com sucesso");
             }}
             label="Cadastrar"
           />
@@ -312,12 +312,12 @@ function CadastroDePessoas() {
                 deviceProfileName === "" ||
                 modelo === ""
               ) {
-                context("Alguns campos estão vazios");
+                toastCall("Alguns campos estão vazios");
                 return;
               }
               console.info("size",devEUI.length)
               if(!regexDevEUI.test(devEUI) || devEUI.length < 16 ){
-                  context("O campo DevEUI deve ser um hexadecimal de 16 dígitos");
+                toastCall("O campo DevEUI deve ser um hexadecimal de 16 dígitos");
                   return
               }
               const data = JSON.stringify({
@@ -334,11 +334,11 @@ function CadastroDePessoas() {
               })
                 .then((response) => {
                   if (response.status === 201) {
-                    context("Crachá cadastrado com sucesso");
+                    toastCall("Crachá cadastrado com sucesso");
                     return;
                   }
                   if (response.status === 409) {
-                    context("Já existe um crachá com esse id");
+                    toastCall("Já existe um crachá com esse id");
                     return;
                   }
                   
@@ -346,13 +346,13 @@ function CadastroDePessoas() {
                     console.debug("status",response.status)
                     response.json().then((value)=>{
                       console.log(value.message)
-                      context(`Erro:
+                      toastCall(`Erro:
                       ${value.message}`)
                      
                     })
                     return
                   }
-                  context("Erro, por favor tente mais tarde");
+                  toastCall("Erro, por favor tente mais tarde");
                 }).then(()=>{
                   setDevEUI("");
                   setNomeCracha("");

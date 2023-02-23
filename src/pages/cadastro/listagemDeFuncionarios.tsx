@@ -146,11 +146,11 @@ export default function ListagemDeFuncionarios() {
           <Table
             rows={rows}
             columns={[
-              { name: "Matrícula", size: 0.3 },
+              { name: "Matrícula", size: 1 },
               { name: "Nome do funcionário", size: 1 },
               { name: "Departamento", size: 1 },
               { name: "Vínculo", size: 1 },
-              { name: "Options", size: 0.5 },
+              { name: "Options", size: 1 },
             ]}
           />
         </div>

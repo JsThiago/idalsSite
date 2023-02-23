@@ -1,7 +1,59 @@
-.toast {
+.toast-botton {
   animation: fadein 0.5, fadeout 0.5s 2.5s;
   -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
+.toast-top-right{
+  animation: fadeinright 0.5, fadeoutright 0.5s 2.5s;
+  -webkit-animation: fadeinright 0.5s, fadeoutright 0.5s 2.5s;
+}
+
+@keyframes fadeinright {
+  from {
+    right: 0;
+    opacity: 0;
+  }
+  to {
+    right: 3%;
+    opacity: 1;
+  }
+}
+
+@-webkit-keyframes fadeinright {
+  from {
+    right: 0;
+    opacity: 0;
+  }
+  to {
+    right: 3%;
+    opacity: 1;
+  }
+}
+
+
+@keyframes fadeoutright {
+  from {
+    right: 3%;
+    opacity: 1;
+  }
+  to {
+    right: 0;
+    opacity: 0;
+  }
+}
+@-webkit-keyframes fadeoutright {
+  from {
+    right: 3%;
+    opacity: 1;
+  }
+  to {
+    tight: 0;
+    opacity: 0;
+  }
+}
+
+
+
+
 @keyframes fadein {
   from {
     bottom: 0;

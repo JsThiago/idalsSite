@@ -113,12 +113,12 @@ export default function ListagemDeCrachas() {
           <Table
             rows={rows}
             columns={[
-              { name: "DevEUI", size: 0.7 },
+              { name: "DevEUI", size: 1 },
               { name: "Nome", size: 1 },
               { name: "Descrição", size: 1 },
               { name: "Modelo", size: 1 },
               { name: "deviceProfileID", size: 1 },
-              { name: "Options", size: 0.5 },
+              { name: "Options", size: 1 },
             ]}
           />
         </div>

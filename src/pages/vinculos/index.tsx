@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import Button from "../../components/button";
 import Modal from "../../components/modal";
 import DeleteConfirm from "../../components/deleteConfirm";
@@ -237,14 +237,16 @@ export default function Vinculos() {
           <Title value="Vínculos" />
         </div>
         <div style={{ padding: "0 3rem" }}>
-          <Table
+          {useMemo(()=>(
+            <Table
             rows={rows}
             columns={[
               { name: "Nome do funcionário", size: 1 },
               { name: "Id crachá", size: 1 },
-              { name: "Options", size: 0.5 },
+              { name: "Options", size: 1 },
             ]}
           />
+          ),[rows]) }
         </div>
         <div
           style={{

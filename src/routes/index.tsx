@@ -1,4 +1,4 @@
-import React, { MemoExoticComponent } from "react";
+import React, { MemoExoticComponent, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import BarraDeNavegacao from "../components/barraDeNavegacao";
 import Footer from "../components/footer";
@@ -15,10 +15,13 @@ import VisualizacaoIndividual from "../pages/visualizacaoIndividual";
 import packageJson from "../../package.json";
 import Dashboard from "../pages/dashboard";
 import Relatorio from "../pages/relatorio";
+import Login from "../pages/login";
 function BaseLayout({
   Component,
+  onExit
 }: {
   Component: (() => JSX.Element) | MemoExoticComponent<() => JSX.Element>;
+  onExit:()=>void
 }) {
   return (
     <div
@@ -35,7 +38,7 @@ function BaseLayout({
       <div
         style={{ display: "flex", flexDirection: "row", position: "relative" }}
       >
-        <Menu />
+        <Menu onExit={onExit}/>
         <div
           style={{
             display: "flex",
@@ -45,12 +48,12 @@ function BaseLayout({
           }}
         >
           <BarraDeNavegacao />
-          <div style={{ padding: "3rem 3rem 3rem 3rem", minHeight: "100vh" }}>
+          <div style={{ padding: "3rem 3rem 3rem 3rem", minHeight: "110vh" }}>
             <Component />
           </div>
         </div>
       </div>
-      <div style={{ maxHeight: "1px" }}>
+      <div style={{backgroundColor:"black",flex:1,display:"flex"}}>
         <Footer style={{ padding: "2rem" }} />
       </div>
     </div>
@@ -58,38 +61,57 @@ function BaseLayout({
 }
 
 function CustomRoutes() {
+  useEffect(()=>{
+    const token = localStorage.getItem("token");
+    if(token) setIsAuth(true)
+  },[])
+  function onExit(){
+    localStorage.removeItem("token");
+    setIsAuth(false);
+  }
+  const [isAuth,setIsAuth] = useState(false);
+  if(!isAuth){
+    return <Login onLogin={()=>{
+      setIsAuth(true);
+      localStorage.setItem("token","token")
+    }}/>
+  }
+  function baseLayout(Component:(() => JSX.Element) | MemoExoticComponent<() => JSX.Element>){
+      return <BaseLayout onExit={onExit} Component={Component}/>
+  }
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<BaseLayout Component={Dashboard} />} />
-        <Route path="/cadastro" element={<BaseLayout Component={Cadastro} />} />
-        <Route path="/vinculos" element={<BaseLayout Component={Vinculos} />} />
+      
+        <Route path="/" element={baseLayout(Dashboard)} />
+        <Route path="/cadastro" element={baseLayout(Cadastro)}  />
+        <Route path="/vinculos" element={baseLayout(Vinculos) } />
         <Route
           path="/areasDeInteresse"
-          element={<BaseLayout Component={AreasDeInteresse} />}
+          element={baseLayout(AreasDeInteresse)}
         />
 
         <Route
           path="/pontosDeInteresse"
-          element={<BaseLayout Component={PontosDeInteresse} />}
+          element={baseLayout(PontosDeInteresse)}
         />
         <Route
           path="/rotasDeInteresse"
-          element={<BaseLayout Component={RotasDeInteresse} />}
+          element={baseLayout(RotasDeInteresse)}
         />
         <Route
           path="visualizacaoIndividual"
-          element={<BaseLayout Component={VisualizacaoIndividual} />}
+          element={baseLayout(VisualizacaoIndividual)}
         />
         <Route
           path="visualizacaoEmGrupo"
-          element={<BaseLayout Component={VisualizacaoEmGrupo} />}
+          element={baseLayout(VisualizacaoEmGrupo)}
         />
         <Route
           path="relatorio"
-          element={<BaseLayout Component={Relatorio} />}
+          element={baseLayout(Relatorio)}
         />
-        <Route path="*" element={<BaseLayout Component={NotFound} />} />
+        <Route path="*" element={baseLayout(NotFound)} />
       </Routes>
     </BrowserRouter>
   );

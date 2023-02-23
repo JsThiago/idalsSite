@@ -9,9 +9,11 @@ import React, {
 } from "react";
 type ToastContextValues = {
   toastCall: (msg: string, time?: number) => void;
+  toastCallTopRight: (msg: string, time?: number) => void;
 };
 const initialValues: ToastContextValues = {
   toastCall: () => "",
+  toastCallTopRight: () => ""
 };
 
 export const toastContext =
@@ -19,21 +21,29 @@ export const toastContext =
 export const useToast = () => React.useContext(toastContext);
 const ToastProvider: React.FC<PropsWithChildren> = memo(
   ({ children }: PropsWithChildren) => {
-    const [visibility, setVisibility] = useState(false);
+    const [visibilityBotton, setVisibilityBotton] = useState(false);
+    const [visibilityTopRight, setVisibilityTopRight] = useState(false);
     const message = useRef<string>("");
     const toastCall = useCallback((text: string, time = 3000) => {
-      setVisibility(true);
+      setVisibilityBotton(true);
       message.current = text;
       setTimeout(() => {
-        setVisibility(false);
+        setVisibilityBotton(false);
+      }, time);
+    }, []);
+    const toastCallTopRight = useCallback((text: string, time = 3000) => {
+      setVisibilityTopRight(true);
+      message.current = text;
+      setTimeout(() => {
+        setVisibilityTopRight(false);
       }, time);
     }, []);
     return (
       <div style={{ display: "flex", flex: 1 }}>
         <div
-          className={visibility ? "toast" : ""}
+          className={visibilityBotton ? "toast" : ""}
           style={{
-            visibility: visibility ? "visible" : "hidden",
+            visibility: visibilityBotton ? "visible" : "hidden",
             backgroundColor: "rgba(51,51,51,1)",
             position: "fixed",
             minWidth: "3rem",
@@ -51,9 +61,30 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
         >
           <span>{message.current}</span>
         </div>
+        <div
+          className={visibilityTopRight ? "toast-top-right" :"" }
+          style={{
+            visibility:visibilityTopRight ? "visible":"hidden",
+            backgroundColor: "rgba(51,51,51,1)",
+            position: "fixed",
+            minWidth: "3rem",
+            marginLeft: "-4rem",
+            padding: "1rem 1rem 1rem 1rem ",
+            top: "3%",
+            transform:"translate(-30%,0)",
+            right: "3%",
+            color: "white",
+            zIndex: 9999999,
+            fontSize: "17px",
+            textAlign: "center",
+            borderRadius: "2px",
+          }}
+        >
+          <span>{message.current}</span>
+        </div>
         {useMemo(
           () => (
-            <toastContext.Provider value={{ toastCall }}>
+            <toastContext.Provider value={{ toastCall,toastCallTopRight }}>
               {children}
             </toastContext.Provider>
           ),

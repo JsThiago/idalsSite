@@ -1,10 +1,11 @@
 import * as React from "react";
 import { SVGProps } from "react";
 
-const Image = (props: SVGProps<SVGSVGElement>) => (
+const Image = (props: SVGProps<SVGSVGElement> & {size?:number}) => (
   <svg
-    width={86}
-    height={80}
+    viewBox="0 0 86 80"
+    width={86 * (props.size || 1)}
+    height={80 * (props.size || 1)}
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -30,11 +31,11 @@ const Image = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const Background = (props: SVGProps<SVGSVGElement>) => (
+const Background = (props: SVGProps<SVGSVGElement> & {size?:number}) => (
   <svg
     viewBox="0 0 240 120"
-    width={240}
-    height={120}
+    width={240*(props.size || 1)}
+    height={120*(props.size || 1)}
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
@@ -47,19 +48,20 @@ const Background = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export default function Logo() {
+export default function Logo({size}:{size?:number}) {
   return (
     <div style={{ position: "relative" }}>
-      <Background />
+      <Background size={size} />
       <div
         style={{
           position: "absolute",
           zIndex: 999,
+
           top: "18%",
           right: "33%",
         }}
       >
-        <Image />
+        <Image size={size}/>
       </div>
     </div>
   );
