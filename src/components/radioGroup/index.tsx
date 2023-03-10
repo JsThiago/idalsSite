@@ -5,15 +5,32 @@ export default function RadioGroup({
   name,
   style,
   radioSize,
+  value,
+  onChange,
 }: {
   options: Array<string>;
   name: string;
   style?: CSSProperties;
   radioSize?: number;
+  value?: string | number;
+  onChange: (value: string, index?: number) => void;
 }) {
+  const isChecked = (localValue?: string, index?: number) => {
+    console.log(index === value);
+    if (typeof index === "number") {
+      if (+index === +(value as number)) {
+        return true;
+      }
+      return false;
+    }
+    if (value === localValue) {
+      return true;
+    }
+    return false;
+  };
   return (
     <div style={style}>
-      {options.map((op) => (
+      {options.map((op, index) => (
         <div
           style={{ display: "flex", alignItems: "center", columnGap: "0.5rem" }}
         >
@@ -21,7 +38,10 @@ export default function RadioGroup({
             id={"radio-" + name + op}
             type="radio"
             name={name}
-            checked
+            onClick={() => {
+              onChange(op, index);
+            }}
+            checked={isChecked(op, index)}
             value={op}
             style={{
               WebkitTransform: `scale(${radioSize || 1.5})`,

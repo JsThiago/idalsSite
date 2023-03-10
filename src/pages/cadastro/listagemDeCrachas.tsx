@@ -111,6 +111,7 @@ export default function ListagemDeCrachas() {
         </div>
         <div style={{ padding: "0 3rem" }}>
           <Table
+            resizable
             rows={rows}
             columns={[
               { name: "DevEUI", size: 1 },

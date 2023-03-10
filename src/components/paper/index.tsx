@@ -10,7 +10,6 @@ export default function Paper({
   onContextMenu?: (e: React.MouseEvent<any>) => void;
   id?: string;
 }) {
-  console.debug("color", props.style);
   return (
     <div
       id={props.id}

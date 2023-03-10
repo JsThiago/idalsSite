@@ -7,7 +7,6 @@ function OptionSelected({
 }: {
   op: string | number;
   onRemove?: () => void;
-
 }) {
   return (
     <div
@@ -73,7 +72,7 @@ export default function MultiSelect({
   onRemoveAll?: () => void;
   onSelectAll?: () => void;
   limit?: number;
-  style?:React.CSSProperties
+  style?: React.CSSProperties;
 }) {
   const inputRef = useRef<HTMLDivElement>();
 
@@ -105,7 +104,7 @@ export default function MultiSelect({
       }}
       style={{
         border: "1px solid rgba(0,0,0,0.2)",
-        minWidth: "5rem",
+        minWidth: "10rem",
         flex: 1,
 
         borderRadius: "4px",
@@ -118,8 +117,7 @@ export default function MultiSelect({
 
         alignItems: "center",
         padding: "0.5rem 0rem .5rem .5rem",
-        ...props.style
-      
+        ...props.style,
       }}
     >
       <div
@@ -150,13 +148,25 @@ export default function MultiSelect({
               e.stopPropagation();
               onRemoveAll && onRemoveAll();
             }}
-            style={{ cursor: "pointer", fontSize: "30px", marginLeft: "auto" }}
+            style={{
+              cursor: "pointer",
+              fontSize: "30px",
+              position: "absolute",
+              right: "0rem",
+              top: "0px",
+            }}
           />
         )}
         <IoMdArrowDropdown
           color="rgba(0,0,0,0.5)"
           style={{
-            right: "0.5rem",
+            position: "absolute",
+            right: "0rem",
+            top: "50%",
+            transform:
+              Object.keys(selected).length >= 1
+                ? "translate(0,-0%)"
+                : "translate(0,-50%)",
             fontSize: "30px",
             marginLeft: "auto",
           }}
@@ -169,7 +179,7 @@ export default function MultiSelect({
           backgroundColor: "white",
           position: "absolute",
           height: "fit-content",
-       
+
           paddingBottom: "1rem",
           zIndex: 999,
           maxHeight: "200px",
@@ -181,7 +191,7 @@ export default function MultiSelect({
           display: "flex",
           visibility: "hidden",
           overflow: "auto",
-          
+
           right: 0,
         }}
       >
@@ -201,7 +211,7 @@ export default function MultiSelect({
                 cursor: "pointer",
                 height: "fit-content",
                 maxWidth: "100%",
-              
+
                 padding: "0.5rem",
                 margin: "0 0.5rem",
                 marginTop: "0.5rem",

@@ -2,7 +2,7 @@ import Paper from "../paper";
 import CustomSelect from "../select";
 import Timepicker from "../timepicker";
 import "./styles.css";
-import DatePicker from "../datePicker"
+import DatePicker from "../datePicker";
 export default function OptionsMenu({
   ...props
 }: {
@@ -68,10 +68,15 @@ export default function OptionsMenu({
           alignItems: "center",
         }}
       >
-    
-        <DatePicker defaultValue={value} label={name} id={name} style={{ padding: "0.2rem 0" }} onChange={(e) => {
-            onChange && onChange(value as string);
-          }}/>
+        <DatePicker
+          defaultValue={value}
+          label={name}
+          id={name}
+          style={{ padding: "0.2rem 0" }}
+          onChange={(newValue) => {
+            onChange && onChange(newValue);
+          }}
+        />
       </Paper>
     );
   }

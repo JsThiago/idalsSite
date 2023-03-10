@@ -11,6 +11,8 @@ import Table from "../../components/table";
 import Title from "../../components/title";
 import calcularPercentBateria from "../../utils/calcularPercentBateria";
 import randomColorGeneratorRGBA from "../../utils/randomColorGeneratorRGBA";
+import PanicNotification from "../../components/panicNotification"
+import PanicModalAlert from "../../components/panicModalAlert"
 interface DadosLocalizacao {
   nome: string;
   tipo: string;
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [totalPessoas, setTotalDePessoas] = useState<number>(0);
   const [dataInicio,setDataInicio] = useState("2010-01-01");
   const [dataFim,setDataFim] = useState((new Date()).toISOString().split("T")[0]);
+  const [panicVisibility,setPanicVisibility] = useState(false);
   const [baterias, setBaterias] = useState<
     Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
   >({});
@@ -154,6 +157,9 @@ export default function Dashboard() {
         rowGap: "3rem",
       }}
     >
+      <PanicModalAlert onClickOutside={()=>{
+        setPanicVisibility(false)
+      }} visibility={panicVisibility}/>
       <Paper
         style={{
           borderRadius: "30px",
@@ -166,8 +172,13 @@ export default function Dashboard() {
           flex: 1,
         }}
       >
-          <div>
+          <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
               <Title value="Pessoas na empresa" />
+              <div style={{marginRight:"2rem"}}>
+                  <PanicNotification onClick={(panics)=>{
+                    setPanicVisibility(true)
+                  }}/>
+              </div>
             </div>
         <div style={{display:"flex",flexDirection:"row"}}>
           <div style={{flex:1}}>

@@ -4,18 +4,26 @@ import CustomInput from "../../components/input";
 import Paper from "../../components/paper";
 import CustomSelect from "../../components/select";
 import Title from "../../components/title";
+import useQuery from "../../hooks/useQuery/useFuncionarios";
+import {
+  phoneMask,
+  phoneMaskVisual,
+  maxPhoneNumber,
+} from "../../utils/mascaras";
 import { toastContext, useToast } from "../../components/toast";
 import { GlobalContext } from "../../context/globalContext";
+import { PostFuncionario } from "../../types";
 const regexDevEUI = new RegExp(/[0-9a-fA-F]+$/);
 
 interface DadosArea {
   nome: string;
 }
 
-interface NetworkServerName{
-  name:string,
-  id:string
+interface NetworkServerName {
+  name: string;
+  id: string;
 }
+
 function CadastroDePessoas() {
   const toastCall = useToast().toastCallTopRight as Function;
   const [nome, setNome] = useState<string>("");
@@ -29,21 +37,24 @@ function CadastroDePessoas() {
   const [descricao, setDescricao] = useState<string>("");
   const [modelo, setModelo] = useState<string>("");
   const [deviceProfileName, setDeviceProfileName] = useState<string>("");
-  const [deviceProfileNameOptions,setDeviceProfileNameOptions] = useState<Array<{value:string,label:string}>>([])
+  const [deviceProfileNameOptions, setDeviceProfileNameOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [optionsArea, setOptionsArea] = useState<
     Array<{ value: string | number; label: string }>
   >([]);
+  const { postFuncionario } = useQuery();
   useEffect(() => {
-    fetch("https://api.idals.com.br/cracha/deviceProfiles").then((data)=>{
-      data.json().then((networksServerName:Array<NetworkServerName>)=>{
-          
-          const newDeviceProfileNameOptions:typeof deviceProfileNameOptions = networksServerName.map((network)=>{
-            return { label:network.name,value:network.name}
-          })
-          setDeviceProfileNameOptions(newDeviceProfileNameOptions)
-          setDeviceProfileName(newDeviceProfileNameOptions[0].value)
-      })
-    })
+    fetch("https://api.idals.com.br/cracha/deviceProfiles").then((data) => {
+      data.json().then((networksServerName: Array<NetworkServerName>) => {
+        const newDeviceProfileNameOptions: typeof deviceProfileNameOptions =
+          networksServerName.map((network) => {
+            return { label: network.name, value: network.name };
+          });
+        setDeviceProfileNameOptions(newDeviceProfileNameOptions);
+        setDeviceProfileName(newDeviceProfileNameOptions[0].value);
+      });
+    });
     fetch("https://api.idals.com.br/area").then((data) => {
       const optionsAreaAux: typeof optionsArea = [];
       data.json().then((areas: Array<DadosArea>) => {
@@ -104,7 +115,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
-             value={matricula}
+              value={matricula}
               onChange={(text) => {
                 setMatricula(text);
               }}
@@ -114,17 +125,18 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
-             value={telefone}
+              max={maxPhoneNumber(telefone)}
+              value={phoneMaskVisual(telefone)}
               label="Telefone"
               onChange={(text) => {
-                setTelefone(text);
+                setTelefone(phoneMask(text));
               }}
               placeholder="(31) 994356453"
             />
           </div>
           <div style={{}}>
             <CustomInput
-             value={login}
+              value={login}
               label="Login"
               onChange={(text) => {
                 setLogin(text);
@@ -134,7 +146,7 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
-             value={senha}
+              value={senha}
               label="Senha"
               onChange={(text) => {
                 setSenha(text);
@@ -177,23 +189,7 @@ function CadastroDePessoas() {
               console.log(area);
               const body = { nome, telefone, matricula, login, senha, area };
               toastCall("Realizando cadastro");
-              fetch("https://api.idals.com.br/funcionario", {
-                method: "POST",
-                body: JSON.stringify(body),
-                headers: { "content-type": "application/json" },
-              }).then((response) => {
-                if (response.status === 201)
-                toastCall("Cadastro realizado com sucesso");
-                else toastCall("Falha ao realizar o cadastro");
-                return
-              }).then(()=>{
-                setNome("");
-                setMatricula("");
-                setTelefone("");
-                setLogin("");
-                setSenha("");
-                setArea(optionsArea[0].value as string)
-              });
+              postFuncionario(body as PostFuncionario);
               toastCall("Cadastro realizado com sucesso");
             }}
             label="Cadastrar"
@@ -238,13 +234,12 @@ function CadastroDePessoas() {
         >
           <div style={{}}>
             <CustomInput
-
               max={16}
               onChange={(text) => {
-                console.info(regexDevEUI.test(text),text,devEUI)
-                if(regexDevEUI.test(text) || text === ""){
+                console.info(regexDevEUI.test(text), text, devEUI);
+                if (regexDevEUI.test(text) || text === "") {
                   setDevEUI(text);
-                } 
+                }
               }}
               value={devEUI}
               label="DevEUI"
@@ -262,7 +257,6 @@ function CadastroDePessoas() {
           </div>
           <div style={{}}>
             <CustomInput
-              
               onChange={(text) => {
                 setDescricao(text);
               }}
@@ -274,7 +268,7 @@ function CadastroDePessoas() {
           <div style={{}}>
             <CustomSelect
               onChange={(text) => {
-                console.debug("no onChange",text)
+                console.debug("no onChange", text);
                 setDeviceProfileName(text);
               }}
               value={deviceProfileName}
@@ -304,7 +298,6 @@ function CadastroDePessoas() {
         >
           <Button
             onClick={() => {
-        
               if (
                 devEUI === "" ||
                 nomeCracha === "" ||
@@ -315,10 +308,12 @@ function CadastroDePessoas() {
                 toastCall("Alguns campos estão vazios");
                 return;
               }
-              console.info("size",devEUI.length)
-              if(!regexDevEUI.test(devEUI) || devEUI.length < 16 ){
-                toastCall("O campo DevEUI deve ser um hexadecimal de 16 dígitos");
-                  return
+              console.info("size", devEUI.length);
+              if (!regexDevEUI.test(devEUI) || devEUI.length < 16) {
+                toastCall(
+                  "O campo DevEUI deve ser um hexadecimal de 16 dígitos"
+                );
+                return;
               }
               const data = JSON.stringify({
                 devEUI,
@@ -341,30 +336,27 @@ function CadastroDePessoas() {
                     toastCall("Já existe um crachá com esse id");
                     return;
                   }
-                  
-                  if(response.status === 400){
-                    console.debug("status",response.status)
-                    response.json().then((value)=>{
-                      console.log(value.message)
+
+                  if (response.status === 400) {
+                    console.debug("status", response.status);
+                    response.json().then((value) => {
+                      console.log(value.message);
                       toastCall(`Erro:
-                      ${value.message}`)
-                     
-                    })
-                    return
+                      ${value.message}`);
+                    });
+                    return;
                   }
                   toastCall("Erro, por favor tente mais tarde");
-                }).then(()=>{
+                })
+                .then(() => {
                   setDevEUI("");
                   setNomeCracha("");
                   setDescricao("");
                   setDeviceProfileName(deviceProfileNameOptions[0].value);
                   setModelo("");
-
-
                 })
                 .catch((e) => {
-                  console.error("err",e)
-                  
+                  console.error("err", e);
                 });
             }}
             label="Cadastrar"
