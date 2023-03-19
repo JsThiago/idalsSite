@@ -5,12 +5,14 @@ import React, {
   useRef,
   useState,
 } from "react";
+import useMapInfo from "../useQuery/useMapInfo";
 import TileLayer from "ol/layer/Tile";
 import TileSource from "ol/source/TileWMS";
 import TileSourceXYZ from "ol/source/XYZ";
 import { register } from "ol/proj/proj4";
 import * as ol from "ol";
 import proj4 from "proj4";
+import { getFeatures } from "../useQuery/api";
 import { Circle, Fill } from "ol/style";
 import Projection from "ol/proj/Projection";
 import {
@@ -25,10 +27,15 @@ import { Coordinate } from "ol/coordinate";
 import VectorSource from "ol/source/Vector";
 import VectorLayer from "ol/layer/Vector";
 import Style from "ol/style/Style";
-export default function useMap(mapRef: React.RefObject<HTMLDivElement>) {
+import { DataGetFeature } from "../../types";
+import { toastContext, useToast } from "../../components/toast";
+export default function useMap(
+  mapRef: React.RefObject<HTMLDivElement>,
+  overlayElement: HTMLElement | null = null
+) {
   const [map, setMap] = useState<ol.Map>();
   const [layers, setLayers] = useState<Record<string, TileLayer<any>>>();
-
+  const toast = useToast();
   useGeographic();
   useEffect(() => {
     const olViewports = mapRef.current?.getElementsByClassName("ol-viewport");
@@ -63,27 +70,47 @@ export default function useMap(mapRef: React.RefObject<HTMLDivElement>) {
 
     mapGenerate.setTarget(mapRef.current as HTMLDivElement);
     mapGenerate.getView().fit(bounds, mapGenerate.getSize() as any);
-
+    const overlay = new ol.Overlay({
+      element: overlayElement || undefined,
+    });
+    mapGenerate.addOverlay(overlay);
     setMap(mapGenerate);
   }, [mapRef]);
 
   return map;
 }
-const formatarFiltros = (options: Record<string, string | number>): string => {
+const formatarFiltros = (
+  options: Record<string, string | number | null>
+): string => {
   let filtroFinal = "";
   for (let key in options) {
     filtroFinal += `${key}:${options[key]};`;
   }
   return filtroFinal.slice(0, -1);
 };
-export function drawWMS(
-  layer: TileLayer<TileSource>,
-  options: Record<string, string | number>,
-  env: Record<string, string> = {},
-  url: string,
-  layerName: string
-) {
+export function drawWMS({
+  layer,
+  env = {},
+  layerName,
+  options,
+  url,
+  onEmpty,
+  onError,
+  onLoading,
+}: {
+  layer: TileLayer<TileSource>;
+  options: Record<string, string | number | null>;
+  env?: Record<string, string>;
+  url: string;
+  layerName: string;
+  onLoading?: (isLoading: boolean) => void;
+  onEmpty?: (quant: number) => void;
+  onError?: (error?: string) => void;
+}) {
   const filtro = formatarFiltros(options);
+  getFeatures(filtro).then((data: DataGetFeature) => {
+    onEmpty && onEmpty(data.totalFeatures);
+  });
   const tileSource = new TileSource({
     url: url,
     params: {
@@ -94,8 +121,18 @@ export function drawWMS(
       env: formatarFiltros(env),
       STYLES: "",
       LAYERS: layerName,
-      exceptions: "application/vnd.ogc.se_inimage",
+      exceptions: "application/json",
     },
+  });
+  tileSource.on("tileloadstart", () => {
+    onLoading && onLoading(true);
+  });
+  tileSource.on("tileloaderror", () => {
+    onError && onError();
+  });
+  tileSource.on("tileloadend", (e) => {
+    console.log("acabou", e);
+    onLoading && onLoading(false);
   });
   layer.setSource(tileSource);
 }

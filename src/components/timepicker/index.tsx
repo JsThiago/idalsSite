@@ -67,7 +67,6 @@ export default function Timepicker({
         className="timepicker-input"
         id="timepicker-input"
         onClick={(e) => {
-          console.debug("click", pickerRef.current?.style.visibility);
           if (
             pickerRef.current?.style.visibility === "hidden" ||
             pickerRef.current?.style.visibility === ""

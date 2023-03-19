@@ -17,14 +17,14 @@ export default function Button({
         setTimeout(() => {
           setAnimation(false);
         }, 200);
-        console.debug(props.onClick);
+
         props.onClick && props.onClick();
       }}
       style={{
         position: "relative",
         width: 120,
         height: 50,
-        backgroundColor: "#410D5B",
+        backgroundColor: "rgba(65,13,91)",
         color: "white",
         borderRadius: "10px",
         border: "none",

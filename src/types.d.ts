@@ -35,3 +35,15 @@ export interface DadosSemRelacao{
     crachas:Array<DadosCracha>
 
 }
+
+export interface DataLocalizacao{
+    id:number;
+    nome:string;
+    tipo:area
+}
+
+export interface DataGetFeature{
+    type:string;
+    features:Array<any>;
+    totalFeatures:number;
+}

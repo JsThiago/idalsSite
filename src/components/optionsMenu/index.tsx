@@ -7,6 +7,7 @@ export default function OptionsMenu({
   ...props
 }: {
   style?: React.CSSProperties;
+  paperBackground?: string;
   options: Array<{
     name: string;
     type: "date" | "selection" | "time";
@@ -33,6 +34,7 @@ export default function OptionsMenu({
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
           alignItems: "center",
+          backgroundColor: "rgba(255,255,255,0.7)",
         }}
       >
         <span style={{ marginRight: "1rem" }}>{name}</span>
@@ -66,6 +68,7 @@ export default function OptionsMenu({
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
           alignItems: "center",
+          backgroundColor: props.paperBackground || "white",
         }}
       >
         <DatePicker
@@ -100,6 +103,7 @@ export default function OptionsMenu({
           borderRadius: "0.5rem",
           boxShadow: "1px 1px 8px rgba(0,0,0,.25)",
           alignItems: "center",
+          backgroundColor: props.paperBackground || "white",
         }}
       >
         <span style={{ marginRight: "0.5rem" }}>{name}</span>

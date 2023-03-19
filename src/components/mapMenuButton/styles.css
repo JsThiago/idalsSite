@@ -1,0 +1,64 @@
+.button-base-map-tooltip {
+	visibility: hidden;
+}
+.button-base-map-wrapper:hover .button-base-map-tooltip {
+	visibility: visible;
+}
+.button-base-map-tooltip-hidden {
+	visibility: hidden !important;
+}
+
+.button-base-map:hover {
+	animation:spin 500ms ease 0s 1 forwards;
+	translate: 10px -10px;
+}
+.button-base-map:not(:hover) {
+
+	animation:spin-reverse 500ms ease 0s 1 forwards
+}
+.button-base-map{
+
+	transition:translate 1s;
+}
+
+.base-map-ballon{
+	transition: height 0.5s;
+	overflow: hidden;
+}
+.base-map-ballon-active{
+	height: 10rem;
+}
+.base-map-ballon-deactive{
+	height: 0rem;
+}
+.base-map-ballon-triangle{
+	transition: width 0.4s 0.1s,height 0.4s 0.1s;
+	overflow: hidden;
+}
+.base-map-ballon-triangle-active{
+	width:2rem;
+	height: 2rem;
+}
+.base-map-ballon-triangle-deactive{
+	width: 0rem;
+	height: 0rem;
+}
+@keyframes spin {
+	from {
+		transform:rotate(0deg);
+	}
+	to {
+		transform:rotate(45deg);
+	}
+}
+@keyframes spin-reverse {
+	from {
+		transform:rotate(45deg);
+	}
+	to {
+		transform:rotate(0deg);
+	}
+}
+
+
+
