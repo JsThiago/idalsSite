@@ -1,0 +1,28 @@
+/* @title funcionario */
+[date <= env('finalDate')] {
+    mark: symbol(circle);
+    mark-size: 20px;
+ 
+    :mark {
+    fill: white;
+      
+      stroke: #5E3174;
+     stroke-width:  6px;
+      fill-opacity:1;     
+
+    }
+}
+
+[date <= env('finalDate')] [@sd < 9k]{
+   :mark {
+    fill: white;
+      mark-size: 20px;
+      stroke: #5E3174;
+      stroke-width: 8px;
+      fill-opacity:1;
+    
+      stroke-opacity:[1+max(dateDifference(date,env('finalDate'),'m')/1440,-1)]
+
+    }
+
+}

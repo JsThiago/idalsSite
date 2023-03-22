@@ -14,6 +14,7 @@ import * as ol from "ol";
 import proj4 from "proj4";
 import { getFeatures } from "../useQuery/api";
 import { Circle, Fill } from "ol/style";
+import { defaults } from "ol/interaction/defaults";
 import Projection from "ol/proj/Projection";
 import {
   fromLonLat,
@@ -29,6 +30,7 @@ import VectorLayer from "ol/layer/Vector";
 import Style from "ol/style/Style";
 import { DataGetFeature } from "../../types";
 import { toastContext, useToast } from "../../components/toast";
+import { major } from "semver";
 export default function useMap(
   mapRef: React.RefObject<HTMLDivElement>,
   overlayElement: HTMLElement | null = null
@@ -66,6 +68,8 @@ export default function useMap(
       target: undefined,
       view: view,
       layers: [tileLayerMap],
+      keyboardEventTarget: "false",
+      interactions: defaults({ keyboard: false }),
     });
 
     mapGenerate.setTarget(mapRef.current as HTMLDivElement);
@@ -88,13 +92,33 @@ const formatarFiltros = (
   }
   return filtroFinal.slice(0, -1);
 };
+export function updateWMS({
+  env,
+  options,
+  layer,
+}: {
+  layer: TileLayer<TileSource>;
+  env?: Record<string, string>;
+  options: Record<string, string | number | null>;
+}) {
+  const tileSource = layer.getSource();
+  if (env) {
+    tileSource?.updateParams({
+      env: formatarFiltros(env),
+      viewparams: formatarFiltros(options),
+    });
+    return;
+  }
+  tileSource?.updateParams({ viewparams: formatarFiltros(options) });
+  return;
+}
 export function drawWMS({
   layer,
   env = {},
   layerName,
   options,
   url,
-  onEmpty,
+  onGetFeaturesNumber,
   onError,
   onLoading,
 }: {
@@ -102,17 +126,18 @@ export function drawWMS({
   options: Record<string, string | number | null>;
   env?: Record<string, string>;
   url: string;
-  layerName: string;
+  layerName?: string;
   onLoading?: (isLoading: boolean) => void;
-  onEmpty?: (quant: number) => void;
+  onGetFeaturesNumber?: (quant: number) => void;
   onError?: (error?: string) => void;
 }) {
   const filtro = formatarFiltros(options);
-  getFeatures(filtro).then((data: DataGetFeature) => {
-    onEmpty && onEmpty(data.totalFeatures);
+  getFeatures(filtro).then((data: any) => {
+    onGetFeaturesNumber && onGetFeaturesNumber(data.numberReturned);
   });
   const tileSource = new TileSource({
     url: url,
+
     params: {
       FORMAT: "image/png",
       VERSION: "1.1.1",

@@ -5,7 +5,7 @@ import { Geometry } from "ol/geom";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import { LegacyRef, useEffect, useRef, useState } from "react";
+import { LegacyRef, useCallback, useEffect, useRef, useState } from "react";
 import Button from "../../components/button";
 import Checkbox from "../../components/checkbox";
 import OptionsMenu from "../../components/optionsMenu";
@@ -14,15 +14,19 @@ import Title from "../../components/title";
 import ErroDados from "../../components/erroDados";
 import { CiFilter } from "react-icons/ci";
 import Spin from "../../components/spin";
+import Slider from "../../components/slider";
 import MapMenuButton from "../../components/mapMenuButton";
 import useMap, {
   addVectorLayer,
   addWMSLayer,
   drawWMS,
   drawPoint,
+  updateWMS,
 } from "../../hooks/useMap";
 import { DadosFuncionarios, DataLocalizacao } from "../../types";
 import { useToast } from "../../components/toast";
+import TileSource from "ol/source/Tile";
+import TileWMS from "ol/source/TileWMS";
 const DATE = new Date();
 export default function VisualizacaoIndividual() {
   const stylesFullscreen: React.CSSProperties = {
@@ -39,6 +43,8 @@ export default function VisualizacaoIndividual() {
   const [fullscreen, setFullscreen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isSimplify, setIsSimplify] = useState<boolean>(false);
+  const [quantPontos, setQuantPontos] = useState({ max: 0, quant: 0 });
   const [fullscreenLastPoint, setFullscreenLastPoint] =
     useState<boolean>(false);
   function generateDate() {
@@ -54,7 +60,7 @@ export default function VisualizacaoIndividual() {
   }
   const mapRefTrajetoria = useRef<HTMLDivElement>(null);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
-  const [lineGap, setLineGap] = useState<number>(1);
+  const [lineGap, setLineGap] = useState<number>(2);
   const [minDist, setMinDist] = useState<number>(1);
   const [showLines, setShowLines] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
@@ -86,7 +92,9 @@ export default function VisualizacaoIndividual() {
   const timeAte = useRef(generateDate()[0]);
   const timeDe = useRef(generateDate()[1]);
   const toastContext = useToast();
-
+  useEffect(() => {
+    setLineGap(2);
+  }, [showLines]);
   const mapTrajetoria = useMap(
     mapRefTrajetoria as React.RefObject<HTMLDivElement>,
     document.getElementById("popup2")
@@ -226,6 +234,50 @@ export default function VisualizacaoIndividual() {
       vectorUltimoPontoLayer.current = addVectorLayer(mapUltimoPonto, "green");
   }, [mapUltimoPonto]);
 
+  const updateWMSLayers = useCallback(() => {
+    updateWMS({
+      layer: wmsTrajetoriaLayer.current as TileLayer<TileWMS>,
+      options: {
+        id_localizacao: +(localizacao as number),
+        funcionario: user,
+        data: `${data.current}`,
+        timeDe: `${timeDe.current}`,
+        timeAte: `${timeAte.current}`,
+        gap: lineGap,
+        simplify_param: +isSimplify,
+
+        min_dist: minDist,
+        limit: quantPontos.quant,
+      },
+    });
+
+    updateWMS({
+      layer: wmsTrajetoriaLineLayer.current as TileLayer<TileWMS>,
+      options: {
+        id_localizacao: +(localizacao as number),
+        funcionario: user,
+        data: `${data.current}`,
+        timeDe: `${timeDe.current}`,
+        timeAte: `${timeAte.current}`,
+        gap: lineGap,
+        simplify_param: +isSimplify,
+        limit: Math.floor(quantPontos.quant / lineGap),
+
+        min_dist: minDist,
+      },
+    });
+  }, [localizacao, minDist, quantPontos, user, lineGap, isSimplify]);
+  useEffect(() => {
+    setQuantPontos({
+      max: quantPontos.max,
+      quant:
+        Math.trunc(quantPontos.quant / lineGap) + lineGap < quantPontos.max
+          ? Math.trunc(quantPontos.quant / lineGap) + lineGap
+          : quantPontos.max,
+    });
+    if (wmsTrajetoriaLayer.current && wmsTrajetoriaLineLayer.current)
+      updateWMSLayers();
+  }, [lineGap]);
   return (
     <>
       <div
@@ -233,6 +285,7 @@ export default function VisualizacaoIndividual() {
           display: "flex",
           flexDirection: "column",
           position: "relative",
+          flex: 1,
         }}
       >
         {(fullscreen || fullscreenLastPoint) && (
@@ -281,393 +334,528 @@ export default function VisualizacaoIndividual() {
             />
           </>
         )}
-        {((fullscreen && isMenuOpen) || !fullscreen) && (
-          <div
-            style={
-              fullscreen
-                ? {
-                    position: "fixed",
-                    top: 20,
-                    zIndex: 999999999,
-                    left: "50%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transform: "translate(-50%,0%)",
-                    flex: 1,
-                    width: "80%",
-                  }
-                : {
-                    marginTop: "-2rem",
-                    marginBottom: "1rem",
-                  }
-            }
-          >
-            <OptionsMenu
-              paperBackground={fullscreen ? "rgba(255,255,255,0.7)" : undefined}
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          {((fullscreen && isMenuOpen) || !fullscreen) && (
+            <div
               style={
                 fullscreen
                   ? {
-                      rowGap: "5rem",
-                      justifyContent: "space-between",
-                      width: "100%",
-                    }
-                  : {}
-              }
-              options={[
-                {
-                  type: "selection",
-                  value: user,
-                  name: "Funcionário:",
-                  onChange: (newUser: string) => {
-                    setUser(newUser);
-                    userRef.current = newUser;
-                  },
-                  ops: funcionarioOptions,
-                },
-                {
-                  type: "selection",
-                  value: localizacao,
-                  name: "Área:",
-                  onChange: (newLocation: string | number) => {
-                    setLocalizacao(+newLocation);
-                  },
-                  ops: localizacaoOptions,
-                },
-                {
-                  type: "date",
-                  value: data.current,
-                  name: "Data:",
-                  onChange: (newData: string) => {
-                    data.current = newData;
-                  },
-                },
-                {
-                  type: "time",
-                  value: timeDe.current,
-                  name: "Horário (de):",
-                  onChange: (time: string) => {
-                    timeDe.current = time;
-                  },
-                },
-                {
-                  type: "time",
-                  value: timeAte.current,
-                  name: "Horário (até):",
-                  onChange: (time: string) => {
-                    timeAte.current = time;
-                  },
-                },
-              ]}
-            />
+                      position: "fixed",
+                      top: 20,
+                      zIndex: 999999999,
+                      left: "50%",
+                      display: "flex",
+                      flexDirection: "row",
+                      transform: "translate(-50%,0%)",
+                      flexWrap: "wrap",
 
-            <div
-              style={{
-                marginTop: "2rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flex: 1,
-              }}
+                      flex: 1,
+
+                      width: "80%",
+                    }
+                  : {
+                      marginTop: "-2rem",
+                      marginBottom: "1rem",
+                    }
+              }
             >
               <div
                 style={{
                   display: "flex",
                   flexDirection: "row",
+                  flexWrap: "wrap",
                   columnGap: "1rem",
                 }}
               >
-                <div
+                <OptionsMenu
+                  paperBackground={
+                    fullscreen ? "rgba(255,255,255,0.7)" : undefined
+                  }
                   style={
                     fullscreen
                       ? {
-                          display: "flex",
-                          alignItems: "center",
-
-                          padding: "1rem",
-                          borderRadius: "0.5rem",
-                          backgroundColor: "rgba(255,255,255,0.7)",
+                          rowGap: "5rem",
+                          justifyContent: "space-between",
+                          width: "100%",
                         }
-                      : { display: "flex", alignItems: "center" }
+                      : {}
                   }
+                  options={[
+                    {
+                      type: "selection",
+                      value: user,
+                      name: "Funcionário:",
+                      onChange: (newUser: string) => {
+                        setUser(newUser);
+                        userRef.current = newUser;
+                      },
+                      ops: funcionarioOptions,
+                    },
+                    {
+                      type: "selection",
+                      value: localizacao,
+                      name: "Área:",
+                      onChange: (newLocation: string | number) => {
+                        setLocalizacao(+newLocation);
+                      },
+                      ops: localizacaoOptions,
+                    },
+                    {
+                      type: "date",
+                      value: data.current,
+                      name: "Data:",
+                      onChange: (newData: string) => {
+                        data.current = newData;
+                      },
+                    },
+                    {
+                      type: "time",
+                      value: timeDe.current,
+                      name: "Horário (de):",
+                      onChange: (time: string) => {
+                        timeDe.current = time;
+                      },
+                    },
+                    {
+                      type: "time",
+                      value: timeAte.current,
+                      name: "Horário (até):",
+                      onChange: (time: string) => {
+                        timeAte.current = time;
+                      },
+                    },
+                  ]}
+                />
+
+                <div
+                  style={{
+                    marginTop: "2rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+
+                    flex: 5,
+                  }}
                 >
-                  <Checkbox
-                    checked={showLines}
-                    style={{ fontSize: "3rem", marginRight: "0.5rem" }}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      columnGap: "1rem",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div
+                      style={
+                        fullscreen
+                          ? {
+                              display: "flex",
+                              alignItems: "center",
+                              boxSizing: "border-box",
+                              padding: "1rem",
+                              borderRadius: "0.5rem",
+                              backgroundColor: "rgba(255,255,255,0.7)",
+                            }
+                          : { display: "flex", alignItems: "center" }
+                      }
+                    >
+                      <Checkbox
+                        checked={showLines}
+                        style={{ fontSize: "3rem", marginRight: "0.5rem" }}
+                        onClick={() => {
+                          if (wmsTrajetoriaLineLayer)
+                            wmsTrajetoriaLineLayer.current?.setVisible(
+                              !showLines
+                            );
+                          setShowLines(!showLines);
+                        }}
+                      />
+                      <label
+                        style={{
+                          fontSize: "1.3rem",
+                          color: "rgb(48, 25, 52)",
+                        }}
+                        htmlFor="checkbox-visualizacao-individual"
+                      >
+                        Linhas
+                      </label>
+                    </div>
+                    {showLines && (
+                      <div
+                        style={
+                          fullscreen
+                            ? {
+                                display: "flex",
+                                alignItems: "center",
+
+                                padding: "1rem",
+                                borderRadius: "0.5rem",
+                                backgroundColor: "rgba(255,255,255,0.7)",
+                              }
+                            : { display: "flex", alignItems: "center" }
+                        }
+                      >
+                        <Checkbox
+                          checked={isSimplify}
+                          disabled={!showLines}
+                          style={{ fontSize: "3rem", marginRight: "0.5rem" }}
+                          onClick={() => {
+                            setLineGap(1);
+                            setIsSimplify(!isSimplify);
+                          }}
+                        />
+                        <label
+                          style={{
+                            fontSize: "1.3rem",
+                            color: "rgb(48, 25, 52)",
+                          }}
+                          htmlFor="checkbox-visualizacao-individual"
+                        >
+                          Simplificar rota
+                        </label>
+                      </div>
+                    )}
+                    {showLines && (
+                      <div
+                        style={
+                          fullscreen
+                            ? {
+                                display: "flex",
+                                alignItems: "center",
+                                backgroundColor: "rgba(255,255,255,0.7)",
+                                padding: "1rem",
+                                borderRadius: "0.5rem",
+                              }
+                            : {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                maxWidth: "content",
+                                flex: 0.5,
+                              }
+                        }
+                      >
+                        <label
+                          style={{
+                            fontSize: "1.3rem",
+                            color: "rgb(48, 25, 52)",
+                          }}
+                        >
+                          {!isSimplify
+                            ? "Espaçamento entre setas:"
+                            : "Nível da simplificação"}
+                        </label>
+                        <input
+                          type="number"
+                          defaultValue={1}
+                          min={1}
+                          disabled={!showLines}
+                          value={lineGap}
+                          onKeyDown={(e) => {
+                            e.preventDefault();
+                          }}
+                          onChange={(e) => {
+                            setLineGap(+e.target.value);
+                          }}
+                          maxLength={2}
+                          style={{
+                            marginLeft: "1rem",
+                            border: "none",
+                            borderBottom: "1px solid black",
+                            outline: "none",
+
+                            maxWidth: "3rem",
+                            backgroundColor: "transparent",
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div
+                      style={
+                        fullscreen
+                          ? {
+                              display: "flex",
+                              alignItems: "center",
+
+                              padding: "1rem",
+                              borderRadius: "0.5rem",
+                              backgroundColor: "rgba(255,255,255,0.7)",
+                              flex: "r",
+                            }
+                          : { display: "flex", alignItems: "center" }
+                      }
+                    >
+                      <label
+                        style={{
+                          fontSize: "1.3rem",
+                          color: "rgb(48, 25, 52)",
+                        }}
+                      >
+                        Distância mínima (m):
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue={1}
+                        min={0}
+                        value={minDist}
+                        onChange={(e) => {
+                          setMinDist(+e.target.value);
+                        }}
+                        maxLength={2}
+                        style={{
+                          marginLeft: "1rem",
+                          border: "none",
+                          borderBottom: "1px solid black",
+                          outline: "none",
+
+                          maxWidth: "3rem",
+                          backgroundColor: "transparent",
+                        }}
+                      />
+                    </div>
+                    {quantPontos.max > 0 && (
+                      <div
+                        style={
+                          fullscreen
+                            ? {
+                                alignItems: "center",
+                                flexDirection: "column",
+                                padding: "1rem",
+                                borderRadius: "0.5rem",
+                                backgroundColor: "rgba(255,255,255,0.7)",
+                                flex: 1,
+                              }
+                            : {}
+                        }
+                      >
+                        <label
+                          style={{
+                            fontSize: "1.3rem",
+                            color: "rgb(48, 25, 52)",
+                          }}
+                        >
+                          Quant. Pontos: {quantPontos.quant}
+                        </label>
+                        <Slider
+                          step={lineGap}
+                          onMouseUp={updateWMSLayers}
+                          onChange={(newValue) => {
+                            setQuantPontos((lastValue) => {
+                              if (newValue <= 1) {
+                                return { quant: lineGap, max: lastValue.max };
+                              }
+                              if (newValue > lastValue.max) {
+                                return {
+                                  quant: lastValue.max,
+                                  max: lastValue.max,
+                                };
+                              }
+                              return {
+                                ...lastValue,
+                                quant: newValue,
+                              };
+                            });
+                          }}
+                          min={0}
+                          max={quantPontos.max}
+                          value={quantPontos.quant}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    flex: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginTop: "2rem",
+                    flexDirection: "row",
+
+                    display: "flex",
+                  }}
+                >
+                  <Button
+                    label="Aplicar filtros"
+                    style={
+                      fullscreen
+                        ? {
+                            backgroundColor: "rgba(65,13,91,0.7)",
+                          }
+                        : {}
+                    }
                     onClick={() => {
-                      if (wmsTrajetoriaLineLayer)
-                        wmsTrajetoriaLineLayer.current?.setVisible(!showLines);
-                      setShowLines(!showLines);
-                    }}
-                  />
-                  <label
-                    style={{
-                      fontSize: "1.3rem",
-                      color: "rgb(48, 25, 52)",
-                    }}
-                    htmlFor="checkbox-visualizacao-individual"
-                  >
-                    Linhas
-                  </label>
-                </div>
-                <div
-                  style={
-                    fullscreen
-                      ? {
-                          display: "flex",
-                          alignItems: "center",
-                          backgroundColor: "rgba(255,255,255,0.7)",
-                          padding: "1rem",
-                          borderRadius: "0.5rem",
-                        }
-                      : { display: "flex", alignItems: "center" }
-                  }
-                >
-                  <label
-                    style={{
-                      fontSize: "1.3rem",
-                      color: "rgb(48, 25, 52)",
-                    }}
-                  >
-                    Espaçamento entre setas:
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={1}
-                    min={1}
-                    value={lineGap}
-                    onKeyDown={(e) => {
-                      e.preventDefault();
-                    }}
-                    onChange={(e) => {
-                      setLineGap(+e.target.value);
-                    }}
-                    maxLength={2}
-                    style={{
-                      marginLeft: "1rem",
-                      border: "none",
-                      borderBottom: "1px solid black",
-                      outline: "none",
+                      const overlayUltimoPonto = mapUltimoPonto
+                        ?.getOverlays()
+                        .item(0);
+                      if (
+                        overlayUltimoPonto !== undefined &&
+                        overlayUltimoPonto.getElement() !== undefined
+                      ) {
+                        (
+                          overlayUltimoPonto.getElement() as HTMLElement
+                        ).hidden = true;
+                      }
+                      if (isError) {
+                        setIsError(false);
+                      }
+                      if (firstPoint.current !== null)
+                        (
+                          vectorPrimeiroPontoTrajetoriaLayer.current as VectorLayer<
+                            VectorSource<Geometry>
+                          >
+                        )
+                          ?.getSource()
+                          ?.removeFeature(firstPoint.current);
+                      if (lastPoint.current !== null)
+                        (
+                          vectorUltimoPontoLayer.current as VectorLayer<
+                            VectorSource<Geometry>
+                          >
+                        )
+                          ?.getSource()
+                          ?.removeFeature(lastPoint.current);
+                      if (lastPointTrajetoria.current !== null)
+                        (
+                          vectorUltimoPontoTrajetoriaLayer.current as VectorLayer<
+                            VectorSource<Geometry>
+                          >
+                        )
+                          ?.getSource()
+                          ?.removeFeature(lastPointTrajetoria.current);
 
-                      maxWidth: "3rem",
-                      backgroundColor: "transparent",
-                    }}
-                  />
-                </div>
-                <div
-                  style={
-                    fullscreen
-                      ? {
-                          display: "flex",
-                          alignItems: "center",
+                      const finalDate = new Date(
+                        data.current + "T" + timeAte.current
+                      );
 
-                          padding: "1rem",
-                          borderRadius: "0.5rem",
-                          backgroundColor: "rgba(255,255,255,0.7)",
-                          flex: "r",
-                        }
-                      : { display: "flex", alignItems: "center" }
-                  }
-                >
-                  <label
-                    style={{
-                      fontSize: "1.3rem",
-                      color: "rgb(48, 25, 52)",
-                    }}
-                  >
-                    Distância mínima (m):
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={1}
-                    min={0}
-                    value={minDist}
-                    onChange={(e) => {
-                      setMinDist(+e.target.value);
-                    }}
-                    maxLength={2}
-                    style={{
-                      marginLeft: "1rem",
-                      border: "none",
-                      borderBottom: "1px solid black",
-                      outline: "none",
+                      finalDate.setHours(finalDate.getHours() - 3);
 
-                      maxWidth: "3rem",
-                      backgroundColor: "transparent",
+                      console.log("datas", data, finalDate);
+                      drawWMS({
+                        layer: wmsTrajetoriaLayer.current as TileLayer<any>,
+                        options: {
+                          id_localizacao: +(localizacao as number),
+                          funcionario: user,
+                          data: `${data.current}`,
+                          timeDe: `${timeDe.current}`,
+                          timeAte: `${timeAte.current}`,
+                          gap: lineGap,
+                          simplify_param: +isSimplify,
+
+                          min_dist: minDist,
+                        },
+                        env: {
+                          finalDate: `${finalDate.toISOString()}`,
+                        },
+                        url: "https://geoserver.idals.com.br/geoserver/idals/wms",
+                        layerName: "mapa:all2",
+                        onLoading: setIsLoading,
+                        onGetFeaturesNumber: (quant) => {
+                          if (quant === 0) {
+                            toastContext.toastCall(
+                              "Não foram encontrados dados para o filtro selecionado"
+                            );
+                          }
+                          setQuantPontos({ max: quant, quant: quant });
+                        },
+                        onError: () => {
+                          setIsError(true);
+                        },
+                      });
+                      fetch(
+                        `https://bigdata.idals.com.br/data?funcionario=${user}&area=${localizacao}&de=${data.current}T${timeDe.current}&ate=${data.current}T${timeAte.current}`
+                      ).then((response) => {
+                        response.json().then((dado) => {
+                          console.debug(dado, "dado");
+                          const coordinates =
+                            dado[dado.length - 1]?.localizacao;
+                          const date = dado[dado.length - 1]?.date;
+
+                          if (!coordinates) return;
+
+                          firstPoint.current = drawPoint(
+                            dado[0].localizacao,
+                            vectorPrimeiroPontoTrajetoriaLayer.current as VectorLayer<any>
+                          );
+
+                          lastPoint.current = drawPoint(
+                            dado[dado.length - 1].localizacao,
+                            vectorUltimoPontoLayer.current as VectorLayer<any>
+                          );
+
+                          lastPointTrajetoria.current = drawPoint(
+                            dado[dado.length - 1].localizacao,
+                            vectorUltimoPontoTrajetoriaLayer.current as VectorLayer<any>
+                          );
+                          if (
+                            mapUltimoPonto
+                              ?.getOverlays()
+                              .item(0)
+                              .getElement() === undefined
+                          ) {
+                            mapUltimoPonto
+                              ?.getOverlays()
+                              .item(0)
+                              .setElement(
+                                document.getElementById("popup") || undefined
+                              );
+                          }
+                          const overlay = mapUltimoPonto?.getOverlays().item(0);
+                          const popup = overlay?.getElement();
+
+                          const content =
+                            document.getElementById("popup-content");
+                          if (popup && content) {
+                            content.innerHTML = `<div><span>Nome: ${
+                              userRef.current
+                            }</span></br><span> </span></br><span>Telefone: ${
+                              funcionariosInfo.current[userRef.current].telefone
+                            }</span></br><span> </span></br><span>Horário: ${
+                              date.split("T")[1].split(".")[0]
+                            }</span></div>`;
+                          }
+                          console.debug(popup);
+                          mapUltimoPonto
+                            ?.getView()
+                            .animate({ center: coordinates, zoom: 19 });
+                          mapTrajetoria
+                            ?.getView()
+                            .animate({ center: coordinates, zoom: 15 });
+
+                          console.debug(mapUltimoPonto?.getLayers());
+                          setTimeout(() => {
+                            if (popup) popup.hidden = false;
+                            overlay?.setPositioning("top-right");
+                            overlay?.setPosition(coordinates);
+                          }, 1000);
+                        });
+                      });
+                      if (mapTrajetoria) {
+                        drawWMS({
+                          layer:
+                            wmsTrajetoriaLineLayer.current as TileLayer<any>,
+                          options: {
+                            funcionario: user,
+                            id_localizacao: +(localizacao as number),
+                            data: `${data.current}`,
+                            timeDe: `${timeDe.current}`,
+                            timeAte: `${timeAte.current}`,
+                            simplify_param: +isSimplify,
+                            gap: lineGap,
+                            min_dist: minDist,
+                          },
+                          url: "https://geoserver.idals.com.br/geoserver/idals/wms",
+                          layerName: "idals:linhas",
+                        });
+                        mapTrajetoria?.updateSize();
+                      }
                     }}
                   />
                 </div>
               </div>
-              <Button
-                label="Aplicar filtros"
-                style={
-                  fullscreen
-                    ? {
-                        backgroundColor: "rgba(65,13,91,0.7)",
-                      }
-                    : {}
-                }
-                onClick={() => {
-                  const overlayUltimoPonto = mapUltimoPonto
-                    ?.getOverlays()
-                    .item(0);
-                  if (
-                    overlayUltimoPonto !== undefined &&
-                    overlayUltimoPonto.getElement() !== undefined
-                  ) {
-                    (overlayUltimoPonto.getElement() as HTMLElement).hidden =
-                      true;
-                  }
-                  if (isError) {
-                    setIsError(false);
-                  }
-                  if (firstPoint.current !== null)
-                    (
-                      vectorPrimeiroPontoTrajetoriaLayer.current as VectorLayer<
-                        VectorSource<Geometry>
-                      >
-                    )
-                      ?.getSource()
-                      ?.removeFeature(firstPoint.current);
-                  if (lastPoint.current !== null)
-                    (
-                      vectorUltimoPontoLayer.current as VectorLayer<
-                        VectorSource<Geometry>
-                      >
-                    )
-                      ?.getSource()
-                      ?.removeFeature(lastPoint.current);
-                  if (lastPointTrajetoria.current !== null)
-                    (
-                      vectorUltimoPontoTrajetoriaLayer.current as VectorLayer<
-                        VectorSource<Geometry>
-                      >
-                    )
-                      ?.getSource()
-                      ?.removeFeature(lastPointTrajetoria.current);
-
-                  const finalDate = new Date(
-                    data.current + "T" + timeAte.current
-                  );
-
-                  finalDate.setHours(finalDate.getHours() - 3);
-
-                  console.log("datas", data, finalDate);
-                  drawWMS({
-                    layer: wmsTrajetoriaLayer.current as TileLayer<any>,
-                    options: {
-                      id_localizacao: +(localizacao as number),
-                      funcionario: user,
-                      data: `${data.current}`,
-                      timeDe: `${timeDe.current}`,
-                      timeAte: `${timeAte.current}`,
-                      simplify_param: 2,
-
-                      min_dist: minDist,
-                    },
-                    env: {
-                      finalDate: `${finalDate.toISOString()}`,
-                    },
-                    url: "https://geoserver.idals.com.br/geoserver/idals/wms",
-                    layerName: "mapa:all2",
-                    onLoading: setIsLoading,
-                    onEmpty: (quant) => {
-                      if (quant === 0) {
-                        toastContext.toastCall(
-                          "Não foram encontrados dados para o filtro selecionado"
-                        );
-                      }
-                    },
-                    onError: () => {
-                      setIsError(true);
-                    },
-                  });
-                  fetch(
-                    `https://bigdata.idals.com.br/data?funcionario=${user}&area=${localizacao}&de=${data.current}T${timeDe.current}&ate=${data.current}T${timeAte.current}`
-                  ).then((response) => {
-                    response.json().then((dado) => {
-                      console.debug(dado, "dado");
-                      const coordinates = dado[dado.length - 1]?.localizacao;
-                      const date = dado[dado.length - 1]?.date;
-
-                      if (!coordinates) return;
-
-                      firstPoint.current = drawPoint(
-                        dado[0].localizacao,
-                        vectorPrimeiroPontoTrajetoriaLayer.current as VectorLayer<any>
-                      );
-
-                      lastPoint.current = drawPoint(
-                        dado[dado.length - 1].localizacao,
-                        vectorUltimoPontoLayer.current as VectorLayer<any>
-                      );
-
-                      lastPointTrajetoria.current = drawPoint(
-                        dado[dado.length - 1].localizacao,
-                        vectorUltimoPontoTrajetoriaLayer.current as VectorLayer<any>
-                      );
-                      if (
-                        mapUltimoPonto?.getOverlays().item(0).getElement() ===
-                        undefined
-                      ) {
-                        mapUltimoPonto
-                          ?.getOverlays()
-                          .item(0)
-                          .setElement(
-                            document.getElementById("popup") || undefined
-                          );
-                      }
-                      const overlay = mapUltimoPonto?.getOverlays().item(0);
-                      const popup = overlay?.getElement();
-
-                      const content = document.getElementById("popup-content");
-                      if (popup && content) {
-                        content.innerHTML = `<div><span>Nome: ${
-                          userRef.current
-                        }</span></br><span> </span></br><span>Telefone: ${
-                          funcionariosInfo.current[userRef.current].telefone
-                        }</span></br><span> </span></br><span>Horário: ${
-                          date.split("T")[1].split(".")[0]
-                        }</span></div>`;
-                      }
-                      console.debug(popup);
-                      mapUltimoPonto
-                        ?.getView()
-                        .animate({ center: coordinates, zoom: 19 });
-                      mapTrajetoria
-                        ?.getView()
-                        .animate({ center: coordinates, zoom: 15 });
-
-                      console.debug(mapUltimoPonto?.getLayers());
-                      setTimeout(() => {
-                        if (popup) popup.hidden = false;
-                        overlay?.setPositioning("top-right");
-                        overlay?.setPosition(coordinates);
-                      }, 1000);
-                    });
-                  });
-                  if (mapTrajetoria) {
-                    drawWMS({
-                      layer: wmsTrajetoriaLineLayer.current as TileLayer<any>,
-                      options: {
-                        funcionario: user,
-                        id_localizacao: +(localizacao as number),
-                        data: `${data.current}`,
-                        timeDe: `${timeDe.current}`,
-                        timeAte: `${timeAte.current}`,
-                        simplify_param: 2,
-                        gap: lineGap,
-                        min_dist: minDist,
-                      },
-                      url: "https://geoserver.idals.com.br/geoserver/idals/wms",
-                      layerName: "idals:linhas",
-                    });
-                    mapTrajetoria?.updateSize();
-                  }
-                }}
-              />
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div
           style={{
@@ -758,6 +946,50 @@ export default function VisualizacaoIndividual() {
               }}
             />
             <div
+              tabIndex={0}
+              onKeyUp={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                  (e.key === "ArrowRight" || e.key === "ArrowLeft") &&
+                  quantPontos.max > 0
+                ) {
+                  updateWMSLayers();
+                }
+              }}
+              onKeyDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (quantPontos.max === 0) {
+                  return;
+                }
+                if (e.key === "ArrowRight") {
+                  setQuantPontos((lastValue) => {
+                    if (lastValue.quant + lineGap < lastValue.max) {
+                      return {
+                        max: lastValue.max,
+                        quant: lastValue.quant + lineGap,
+                      };
+                    }
+                    return { quant: lastValue.max, max: lastValue.max };
+                  });
+                  return;
+                }
+                if (e.key === "ArrowLeft") {
+                  setQuantPontos((lastValue) => {
+                    if (lastValue.quant - lineGap >= 1) {
+                      return {
+                        max: lastValue.max,
+                        quant: lastValue.quant - lineGap,
+                      };
+                    }
+                    return { quant: lineGap, max: lastValue.max };
+                  });
+                  return;
+                }
+                return;
+              }}
               style={
                 fullscreen
                   ? stylesFullscreen

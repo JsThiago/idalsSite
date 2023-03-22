@@ -4,9 +4,16 @@ const Checkbox: React.FC<ComponentPropsWithoutRef<"input">> = ({
   style,
   checked,
   onClick,
+  disabled,
 }) => {
   return (
-    <input type="checkbox" style={style} checked={checked} onClick={onClick} />
+    <input
+      type="checkbox"
+      disabled={disabled}
+      style={style}
+      checked={checked}
+      onClick={onClick}
+    />
   );
 };
 

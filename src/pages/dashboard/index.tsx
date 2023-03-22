@@ -11,8 +11,8 @@ import Table from "../../components/table";
 import Title from "../../components/title";
 import calcularPercentBateria from "../../utils/calcularPercentBateria";
 import randomColorGeneratorRGBA from "../../utils/randomColorGeneratorRGBA";
-import PanicNotification from "../../components/panicNotification"
-import PanicModalAlert from "../../components/panicModalAlert"
+import PanicNotification from "../../components/panicNotification";
+import PanicModalAlert from "../../components/panicModalAlert";
 interface DadosLocalizacao {
   nome: string;
   tipo: string;
@@ -22,53 +22,58 @@ interface DadosLocalizacao {
 export default function Dashboard() {
   const [areas, setAreas] = useState<Record<string | number, any>>({});
   const [totalPessoas, setTotalDePessoas] = useState<number>(0);
-  const [dataInicio,setDataInicio] = useState("2010-01-01");
-  const [dataFim,setDataFim] = useState((new Date()).toISOString().split("T")[0]);
-  const [panicVisibility,setPanicVisibility] = useState(false);
+  const [dataInicio, setDataInicio] = useState("2010-01-01");
+  const [dataFim, setDataFim] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [panicVisibility, setPanicVisibility] = useState(false);
   const [baterias, setBaterias] = useState<
     Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
   >({});
   const [dataCards, setDataCards] = useState<
-    Record<string,{ nome: string; quant: number; color: string }>
+    Record<string, { nome: string; quant: number; color: string }>
   >({});
   const [areaSelected, setAreaSelected] = useState<string>("Todas");
   const [rows, setRows] = useState<Record<string, Array<Array<any>>>>({
     Todas: [],
   });
-  const [areasOptions,setAreasOptions] = useState<Record<string|number,string|number>>({});
-  const [areasSelectedFilter,setAreasSelectedFilter] = useState<Record<string|number,string|number>>({todos:"Todos"})  
-  
-  function rowsAssembly(){
-      const rowsFinal:Array<Array<any>> = []
-      if(areaSelected !== "Todas") return rows[areaSelected]
-      if("todos" in areasSelectedFilter) return rows["Todas"]
-      Object.keys(rows).forEach((key,index)=>{
-        if(key in areasSelectedFilter){
-          rowsFinal.push(...rows[key])
-        }
+  const [areasOptions, setAreasOptions] = useState<
+    Record<string | number, string | number>
+  >({});
+  const [areasSelectedFilter, setAreasSelectedFilter] = useState<
+    Record<string | number, string | number>
+  >({ todos: "Todos" });
 
-      })
-      console.log("rowx",rowsFinal)
-      return rowsFinal;
-  } 
-  function filterArea(areaName:string){
-  if(areaName in areasSelectedFilter || "todos" in areasSelectedFilter){
+  function rowsAssembly() {
+    const rowsFinal: Array<Array<any>> = [];
+    if (areaSelected !== "Todas") return rows[areaSelected];
+    if ("todos" in areasSelectedFilter) return rows["Todas"];
+    Object.keys(rows).forEach((key, index) => {
+      if (key in areasSelectedFilter) {
+        rowsFinal.push(...rows[key]);
+      }
+    });
+    console.log("rowx", rowsFinal);
+    return rowsFinal;
+  }
+  function filterArea(areaName: string) {
+    if (areaName in areasSelectedFilter || "todos" in areasSelectedFilter) {
       return true;
     }
-    return false
+    return false;
   }
   useEffect(() => {
     fetch("https://api.idals.com.br/localizacao?tipo=area").then((resp) => {
       resp.json().then((data: Array<DadosLocalizacao>) => {
         const areasAux: typeof areas = {};
-        const areasOptionsAux : typeof areasOptions = {};
+        const areasOptionsAux: typeof areasOptions = {};
         data.forEach((localizacao) => {
           areasAux[localizacao.id] = { ...localizacao };
-          areasOptionsAux[localizacao.nome] = localizacao.nome
+          areasOptionsAux[localizacao.nome] = localizacao.nome;
         });
         setAreas(areasAux);
-        setAreasOptions(areasOptionsAux)
-        console.info(areasOptionsAux)
+        setAreasOptions(areasOptionsAux);
+        console.info(areasOptionsAux);
       });
     });
   }, []);
@@ -86,7 +91,7 @@ export default function Dashboard() {
     };
     const promises = Promise.all(
       Object.entries(areas).map(async ([keys, value], index) => {
-        if(!filterArea(value.nome)) return
+        if (!filterArea(value.nome)) return;
         newRows[value.nome] = [];
         newBaterias[value.nome as string] = {
           amarelo: 0,
@@ -100,8 +105,7 @@ export default function Dashboard() {
         const json = await response.json();
 
         json.forEach((info: any, index: number) => {
-        
-          if(info.funcionario === null) return;
+          if (info.funcionario === null) return;
           let color: string | undefined = "";
           if (calcularPercentBateria(info.bateria) > 12) {
             newBaterias[value.nome as string].verde += 1;
@@ -117,21 +121,29 @@ export default function Dashboard() {
             color = "#ECD03B";
           }
           newRows[value.nome].push([
-            <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
+            <Circle
+              color={color}
+              style={{ minWidth: "2rem", height: "2rem" }}
+            />,
             info.nome_funcionario,
             info.funcionario.matricula,
           ]);
           newRows["Todas"].push([
-            <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
+            <Circle
+              color={color}
+              style={{ minWidth: "2rem", height: "2rem" }}
+            />,
             info.nome_funcionario,
             info.funcionario.matricula,
           ]);
         });
         totalDePessoasAux += json?.length;
         const newColor = randomColorGeneratorRGBA(colorsUsed);
-        console.log(dataCards[value.nome]?.color)
-        const newColorRGB = dataCards[value?.nome]?.color || `${newColor.r}, ${newColor.g}, ${newColor.b}` ;
-        dataCardsAux[value?.nome]={
+        console.log(dataCards[value.nome]?.color);
+        const newColorRGB =
+          dataCards[value?.nome]?.color ||
+          `${newColor.r}, ${newColor.g}, ${newColor.b}`;
+        dataCardsAux[value?.nome] = {
           nome: value?.nome,
           quant: json?.length,
           color: newColorRGB,
@@ -157,9 +169,12 @@ export default function Dashboard() {
         rowGap: "3rem",
       }}
     >
-      <PanicModalAlert onClickOutside={()=>{
-        setPanicVisibility(false)
-      }} visibility={panicVisibility}/>
+      <PanicModalAlert
+        onClickOutside={() => {
+          setPanicVisibility(false);
+        }}
+        visibility={panicVisibility}
+      />
       <Paper
         style={{
           borderRadius: "30px",
@@ -172,17 +187,26 @@ export default function Dashboard() {
           flex: 1,
         }}
       >
-          <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"space-between"}}>
-              <Title value="Pessoas na empresa" />
-              <div style={{marginRight:"2rem"}}>
-                  <PanicNotification onClick={(panics)=>{
-                    setPanicVisibility(true)
-                  }}/>
-              </div>
-            </div>
-        <div style={{display:"flex",flexDirection:"row"}}>
-          <div style={{flex:1}}>
-          <SubTitle
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Title value="Pessoas na empresa" />
+          <div style={{ marginRight: "2rem" }}>
+            <PanicNotification
+              onClick={(panics) => {
+                setPanicVisibility(true);
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <div style={{ flex: 1 }}>
+            <SubTitle
               style={{
                 color: "#A6A6A6",
                 fontSize: "1.2rem",
@@ -192,52 +216,81 @@ export default function Dashboard() {
               }}
               value="Filtros"
             />
-            <div style={{display:"flex",flexDirection:"column",flex:1,marginLeft:"4rem",rowGap:"2rem"}}>
-              <div><DatePicker onBlur={(value)=>{
-                setDataInicio(value)
-              }} defaultValue={dataInicio} label="A partir de"/></div>
-              {
-               /*
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                marginLeft: "4rem",
+                rowGap: "2rem",
+              }}
+            >
+              <div>
+                <DatePicker
+                  onBlur={(value) => {
+                    setDataInicio(value);
+                  }}
+                  defaultValue={dataInicio}
+                  label="A partir de"
+                />
+              </div>
+              {/*
                 <div><DatePicker onChange={(value)=>{
                 setDataFim(value)
               }} defaultValue={dataFim} label="Até"/></div>
-              */
-              }
-              <div style={{flex:1,display:"flex",flexDirection:"row",alignItems:"center",width:"80%"}}>
-                <label style={{marginRight:"1rem"}} htmlFor="areas-multselect">Áreas</label>
-                <MultiSelect selected={areasSelectedFilter}
-                onRemoveAll={()=>{
-                  setAreasSelectedFilter({})
+              */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  width: "80%",
                 }}
-                key="areas-multselect"
-                onRemove={(value)=>{
-                    const areasSelectedFilterCopy = {...areasSelectedFilter};
-                    delete areasSelectedFilterCopy[value[0]]
-                    setAreasSelectedFilter(areasSelectedFilterCopy)
-                }}
-                onSelectAll={()=>{
-                    setAreasSelectedFilter({todos:"Todos"});
-                }} onSelect={(newValue)=>{
-                   setAreaSelected("Todas")
-                   if("todos" in areasSelectedFilter){
-                    setAreasSelectedFilter({[newValue[0]]:newValue[1]})
-                    return
-                   }
-                   setAreasSelectedFilter({
-                    ...areasSelectedFilter,
-                    [newValue[0]]:newValue[1]})
-                }} options={areasOptions}/></div>
+              >
+                <label
+                  style={{ marginRight: "1rem" }}
+                  htmlFor="areas-multselect"
+                >
+                  Áreas
+                </label>
+                <MultiSelect
+                  selected={areasSelectedFilter}
+                  onRemoveAll={() => {
+                    setAreasSelectedFilter({});
+                  }}
+                  key="areas-multselect"
+                  onRemove={(value) => {
+                    const areasSelectedFilterCopy = { ...areasSelectedFilter };
+                    delete areasSelectedFilterCopy[value[0]];
+                    setAreasSelectedFilter(areasSelectedFilterCopy);
+                  }}
+                  onSelectAll={() => {
+                    setAreasSelectedFilter({ todos: "Todos" });
+                  }}
+                  onSelect={(newValue) => {
+                    setAreaSelected("Todas");
+                    if ("todos" in areasSelectedFilter) {
+                      setAreasSelectedFilter({ [newValue[0]]: newValue[1] });
+                      return;
+                    }
+                    setAreasSelectedFilter({
+                      ...areasSelectedFilter,
+                      [newValue[0]]: newValue[1],
+                    });
+                  }}
+                  options={areasOptions}
+                />
+              </div>
             </div>
-    
           </div>
           <div
             style={{
               display: "flex",
-              flex:1,
+              flex: 1,
               flexDirection: "column",
             }}
           >
-          
             <SubTitle
               style={{
                 color: "#A6A6A6",
@@ -317,22 +370,21 @@ export default function Dashboard() {
               >
                 {Object.values(dataCards)
                   .sort((a, b) => +(a.quant < b.quant))
-                  .map((data, index) =>{ 
-                    if(filterArea(data.nome))
-           
+                  .map((data, index) => {
+                    if (filterArea(data.nome))
                       return (
-                      <Card
-                        onClick={(e) => {
-                      
-                          setAreaSelected(e);
-                        }}
-                        id={`${data.nome}-card-${data.quant}-${data.color}`}
-                        number={data.quant}
-                        title={data.nome}
-                        color={data.color}
-                        titleColor={data.color}
-                      ></Card>
-                    )})}
+                        <Card
+                          onClick={(e) => {
+                            setAreaSelected(e);
+                          }}
+                          id={`${data.nome}-card-${data.quant}-${data.color}`}
+                          number={data.quant}
+                          title={data.nome}
+                          color={data.color}
+                          titleColor={data.color}
+                        ></Card>
+                      );
+                  })}
               </div>
             )}
           </div>
@@ -388,7 +440,7 @@ export default function Dashboard() {
               <Circle />
               <span>{`${
                 baterias[areaSelected]?.verde || 0
-              }  pessoas com crachá perfeito`}</span>
+              }  pessoas com bateria acima de 80%`}</span>
             </div>
             <div
               style={{
@@ -416,8 +468,9 @@ export default function Dashboard() {
             >
               <Circle color="#BC0202" />
               <span>
-                {`${baterias[areaSelected]?.vermelho || 0} pessoas com problemas
-                de detecção`}
+                {`${
+                  baterias[areaSelected]?.vermelho || 0
+                } pessoas com bateria em estado crítico`}
               </span>
             </div>
           </div>
