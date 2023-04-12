@@ -19,7 +19,6 @@ export default function Slider({
     <div>
       <input
         max={max}
-        step={step}
         min={min}
         value={value}
         onKeyUp={(e) => {

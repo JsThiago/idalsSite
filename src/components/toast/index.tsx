@@ -10,12 +10,17 @@ import React, {
 type ToastContextValues = {
   toastCall: (msg: string, time?: number) => void;
   toastCallTopRight: (msg: string, time?: number) => void;
-  toastCallPanic: (msg: string, time?: number,callback?:null|(()=>boolean),callbackMessage?:null|(()=>string)) => void;
+  toastCallPanic: (
+    msg: string,
+    time?: number,
+    callback?: null | (() => boolean),
+    callbackMessage?: null | (() => string)
+  ) => void;
 };
 const initialValues: ToastContextValues = {
   toastCall: () => "",
   toastCallTopRight: () => "",
-  toastCallPanic:()=>""
+  toastCallPanic: () => "",
 };
 
 export const toastContext =
@@ -25,7 +30,7 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
   ({ children }: PropsWithChildren) => {
     const [visibilityBotton, setVisibilityBotton] = useState(false);
     const [visibilityTopRight, setVisibilityTopRight] = useState(false);
-    const panicCallback = useRef<()=>void|undefined>()
+    const panicCallback = useRef<() => void | undefined>();
     const [visibilityPanic, setVisibilityPanic] = useState(false);
     const message = useRef<string>("");
     const toastCall = useCallback((text: string, time = 3000) => {
@@ -43,12 +48,12 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
       }, time);
     }, []);
     const toastCallPanic = useCallback((text: string, time = 10000) => {
-
-      setVisibilityPanic(()=>true);
-    
       message.current = text;
+
+      setVisibilityPanic(() => true);
+
       setTimeout(() => {
-        setVisibilityPanic(()=>false);
+        setVisibilityPanic(() => false);
       }, time);
     }, []);
     return (
@@ -63,7 +68,7 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
             marginLeft: "-4rem",
             padding: "1rem 1rem 1rem 1rem ",
             bottom: "3%",
-            transform:"translate(-30%,0)",
+            transform: "translate(-30%,0)",
             left: "50%",
             color: "white",
             zIndex: 9999999,
@@ -75,16 +80,16 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
           <span>{message.current}</span>
         </div>
         <div
-          className={visibilityTopRight ? "toast-top-right" :"" }
+          className={visibilityTopRight ? "toast-top-right" : ""}
           style={{
-            visibility:visibilityTopRight ? "visible":"hidden",
+            visibility: visibilityTopRight ? "visible" : "hidden",
             backgroundColor: "rgba(51,51,51,1)",
             position: "fixed",
             minWidth: "3rem",
             marginLeft: "-4rem",
             padding: "1rem 1rem 1rem 1rem ",
             top: "3%",
-            transform:"translate(-30%,0)",
+            transform: "translate(-30%,0)",
             right: "3%",
             color: "white",
             zIndex: 9999999,
@@ -96,19 +101,19 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
           <span>{message.current}</span>
         </div>
         <div
-          onClick={()=>{
+          onClick={() => {
             panicCallback.current && panicCallback.current();
           }}
-          className={visibilityPanic ? "toast-panic" :"" }
+          className={visibilityPanic ? "toast-panic" : ""}
           style={{
-            visibility:visibilityPanic ? "visible":"hidden",
+            visibility: visibilityPanic ? "visible" : "hidden",
             backgroundColor: "#BC0202",
             position: "fixed",
             minWidth: "3rem",
             marginLeft: "-4rem",
             padding: "1rem 1rem 1rem 1rem ",
             top: "3%",
-            transform:"translate(-30%,0)",
+            transform: "translate(-30%,0)",
             right: "1%",
             color: "white",
             zIndex: 9999999,
@@ -121,7 +126,9 @@ const ToastProvider: React.FC<PropsWithChildren> = memo(
         </div>
         {useMemo(
           () => (
-            <toastContext.Provider value={{ toastCall,toastCallTopRight,toastCallPanic }}>
+            <toastContext.Provider
+              value={{ toastCall, toastCallTopRight, toastCallPanic }}
+            >
               {children}
             </toastContext.Provider>
           ),

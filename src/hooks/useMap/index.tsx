@@ -88,7 +88,7 @@ const formatarFiltros = (
 ): string => {
   let filtroFinal = "";
   for (let key in options) {
-    filtroFinal += `${key}:${options[key]};`;
+    if (options[key] !== null) filtroFinal += `${key}:${options[key]};`;
   }
   return filtroFinal.slice(0, -1);
 };
@@ -96,20 +96,28 @@ export function updateWMS({
   env,
   options,
   layer,
+  onGetFeaturesNumber,
 }: {
   layer: TileLayer<TileSource>;
   env?: Record<string, string>;
   options: Record<string, string | number | null>;
+  onGetFeaturesNumber?: (quant: number) => void;
 }) {
+  const filtro = formatarFiltros(options);
+  if (onGetFeaturesNumber)
+    getFeatures(filtro).then((data) => {
+      data["limit"] = 19999999;
+      onGetFeaturesNumber && onGetFeaturesNumber(data.numberReturned);
+    });
   const tileSource = layer.getSource();
   if (env) {
     tileSource?.updateParams({
       env: formatarFiltros(env),
-      viewparams: formatarFiltros(options),
+      viewparams: filtro,
     });
     return;
   }
-  tileSource?.updateParams({ viewparams: formatarFiltros(options) });
+  tileSource?.updateParams({ viewparams: filtro });
   return;
 }
 export function drawWMS({
@@ -183,19 +191,25 @@ export const addWMSLayer = (map: ol.Map) => {
 export const addVectorLayer = (
   map: ol.Map,
   color: string = "blue",
-  size = 10
+  size = 10,
+  id: number | null = null
 ) => {
   const circle = new Circle({ radius: size, fill: new Fill({ color: color }) });
   const style = new Style({ image: circle });
   const vectorLayer = new VectorLayer({ style });
+  if (id) {
+    vectorLayer.set("id", id);
+  }
   map.addLayer(vectorLayer);
 
   return vectorLayer;
 };
 
 export const drawPoint = (e: Coordinate, layer: VectorLayer<any>) => {
+  console.debug("coordinates", e);
   const point = new ol.Feature({ geometry: new Point(e) });
   const source = new VectorSource({ features: [point] });
   layer.setSource(source);
+  console.debug("AQUIII");
   return point;
 };

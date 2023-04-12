@@ -52,7 +52,7 @@
     "@types/openlayers": "^4.6.18",
     "@types/proj4": "^2.5.2",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "eslint": "^8.0.1",
+    "eslint": "^8.36.0",
     "eslint-config-standard-with-typescript": "^34.0.0",
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",

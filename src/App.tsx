@@ -11,16 +11,16 @@ import ToastProvider from "./components/toast";
 function App() {
   return (
     <ToastProvider>
-      <GlobalContextWrapper>
-        <QueryContextWrapper>
+      <QueryContextWrapper>
+        <GlobalContextWrapper>
           {useMemo(
             () => (
               <CustomRoutes />
             ),
             []
           )}
-        </QueryContextWrapper>
-      </GlobalContextWrapper>
+        </GlobalContextWrapper>
+      </QueryContextWrapper>
     </ToastProvider>
   );
 }

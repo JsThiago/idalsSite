@@ -35,7 +35,7 @@ export default function Table({
   );
   const clientWidthRef = useRef<number | null>(null);
   const pastSort = useRef(sortNumber);
-  const [pagesNumbersSelect, setPagesNumberSelect] = useState<
+  const [pagesNumbersSelect, setPagesNumbersSelect] = useState<
     Array<{ label: string | number; value: string | number }>
   >([]);
   console.info("width", clientWidthRef);
@@ -45,7 +45,7 @@ export default function Table({
     for (let i = 0; i < pages.length; i++) {
       pagesNumbersSelectAux.push({ value: i, label: `${i + 1}` });
     }
-    setPagesNumberSelect(pagesNumbersSelectAux);
+    setPagesNumbersSelect(pagesNumbersSelectAux);
   }, [pages]);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function Table({
     });
     rows.forEach((row, index) => {
       pagesAux[pageNumberAux].push(row);
-      if ((index + 1) % QUANT_PER_PAGE === 0) {
+      if (index % QUANT_PER_PAGE === 0 && index !== 0) {
         pageNumberAux++;
         pagesAux[pageNumberAux] = [];
       }
@@ -328,20 +328,22 @@ export default function Table({
           })}
         </tbody>
       </table>
-      <div style={{ marginTop: "1rem" }}>
-        <CustomSelect
-          onChange={(value) => {
-            //clientWidthRef.current = null;
-            setPageNumber(+value);
-          }}
-          options={pagesNumbersSelect}
-          style={{
-            maxWidth: "3rem",
-            paddingRight: "1.2rem",
-            alignSelf: "flex-end",
-          }}
-        ></CustomSelect>
-      </div>
+      {pages.length > 1 && (
+        <div style={{ marginTop: "1rem" }}>
+          <CustomSelect
+            onChange={(value) => {
+              //clientWidthRef.current = null;
+              setPageNumber(+value);
+            }}
+            options={pagesNumbersSelect}
+            style={{
+              maxWidth: "3rem",
+              paddingRight: "1.2rem",
+              alignSelf: "flex-end",
+            }}
+          ></CustomSelect>
+        </div>
+      )}
     </>
   );
 }

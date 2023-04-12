@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "../../components/button";
 import Card from "../../components/card";
 import ElipsePerson from "../../components/card/icons/people";
@@ -13,6 +13,10 @@ import calcularPercentBateria from "../../utils/calcularPercentBateria";
 import randomColorGeneratorRGBA from "../../utils/randomColorGeneratorRGBA";
 import PanicNotification from "../../components/panicNotification";
 import PanicModalAlert from "../../components/panicModalAlert";
+import useDashboard from "../../hooks/useQuery/useDashboard";
+import useDataStatus from "../../hooks/useQuery/useData";
+import { DataBigDataStatus } from "../../types";
+import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
 interface DadosLocalizacao {
   nome: string;
   tipo: string;
@@ -20,23 +24,40 @@ interface DadosLocalizacao {
   quant: number;
 }
 export default function Dashboard() {
-  const [areas, setAreas] = useState<Record<string | number, any>>({});
   const [totalPessoas, setTotalDePessoas] = useState<number>(0);
   const [dataInicio, setDataInicio] = useState("2010-01-01");
-  const [dataFim, setDataFim] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const replaceNullAreaName = useCallback((areaName: string) => {
+    if (areaName === "null") {
+      return "Fora";
+    }
+    return areaName;
+  }, []);
+
+  const isTodosFromAreas = useCallback((area: string | number) => {
+    if (area === "todos") {
+      return true;
+    }
+    return false;
+  }, []);
   const [panicVisibility, setPanicVisibility] = useState(false);
-  const [baterias, setBaterias] = useState<
-    Record<string, { vermelho: 0; amarelo: 0; verde: 0 }>
-  >({});
+  const [baterias, setBaterias] = useState<{
+    vermelho: number;
+    amarelo: number;
+    verde: number;
+  }>({
+    amarelo: 0,
+    verde: 0,
+    vermelho: 0,
+  });
   const [dataCards, setDataCards] = useState<
-    Record<string, { nome: string; quant: number; color: string }>
+    Record<
+      string,
+      { nome: string; quant: number; color: string; id: string | number }
+    >
   >({});
   const [areaSelected, setAreaSelected] = useState<string>("Todas");
-  const [rows, setRows] = useState<Record<string, Array<Array<any>>>>({
-    Todas: [],
-  });
+  const [rows, setRows] = useState<Array<any>>([]);
+
   const [areasOptions, setAreasOptions] = useState<
     Record<string | number, string | number>
   >({});
@@ -44,122 +65,111 @@ export default function Dashboard() {
     Record<string | number, string | number>
   >({ todos: "Todos" });
 
-  function rowsAssembly() {
-    const rowsFinal: Array<Array<any>> = [];
-    if (areaSelected !== "Todas") return rows[areaSelected];
-    if ("todos" in areasSelectedFilter) return rows["Todas"];
-    Object.keys(rows).forEach((key, index) => {
-      if (key in areasSelectedFilter) {
-        rowsFinal.push(...rows[key]);
-      }
+  const filterTodosFromArea = useCallback(
+    (areasSelectedFilter: Record<string | number, string | number>) =>
+      Object.keys(areasSelectedFilter).filter((area) => {
+        if (isTodosFromAreas(area)) {
+          return false;
+        }
+        return true;
+      }),
+    []
+  );
+  const {
+    data: ultimaPosicaoFuncPorArea,
+    isError,
+    isLoading,
+  } = useDataStatus(
+    useMemo(
+      () => filterTodosFromArea(areasSelectedFilter),
+      [filterTodosFromArea, areasSelectedFilter]
+    ),
+    ""
+  );
+  console.debug("funcs", ultimaPosicaoFuncPorArea);
+  const {
+    data: areasMetadados,
+    isError: isErrorMetadados,
+    isLoading: isLoadingMetadados,
+  } = useDashboard(
+    useMemo(
+      () => filterTodosFromArea(areasSelectedFilter),
+      [filterTodosFromArea, areasSelectedFilter]
+    ),
+    ""
+  );
+  useEffect(() => {
+    if (Object.keys(areasOptions).length > 0) {
+      return;
+    }
+    let areasOptionsAux: typeof areasOptions = {};
+    Object.entries(areasMetadados?.areas)?.forEach(([key, value]) => {
+      areasOptionsAux[value.id] = key;
     });
-    console.log("rowx", rowsFinal);
-    return rowsFinal;
-  }
-  function filterArea(areaName: string) {
-    if (areaName in areasSelectedFilter || "todos" in areasSelectedFilter) {
+    setAreasOptions(areasOptionsAux);
+  }, [areasMetadados]);
+
+  function filterArea(areaName: string | number) {
+    console.log(areaName);
+    if (+areaName in areasSelectedFilter || "todos" in areasSelectedFilter) {
       return true;
     }
     return false;
   }
-  useEffect(() => {
-    fetch("https://api.idals.com.br/localizacao?tipo=area").then((resp) => {
-      resp.json().then((data: Array<DadosLocalizacao>) => {
-        const areasAux: typeof areas = {};
-        const areasOptionsAux: typeof areasOptions = {};
-        data.forEach((localizacao) => {
-          areasAux[localizacao.id] = { ...localizacao };
-          areasOptionsAux[localizacao.nome] = localizacao.nome;
-        });
-        setAreas(areasAux);
-        setAreasOptions(areasOptionsAux);
-        console.info(areasOptionsAux);
-      });
-    });
-  }, []);
+
   useEffect(() => {
     const dataCardsAux: typeof dataCards = {};
-    let totalDePessoasAux = 0;
     const colorsUsed: Record<string, any> = {};
-    const newRows: typeof rows = { Todas: [] };
+
+    Object.entries(areasMetadados.areas).map(([key, value]) => {
+      const newColor = randomColorGeneratorRGBA(colorsUsed);
+      const newColorRGB =
+        dataCards[key]?.color || `${newColor.r}, ${newColor.g}, ${newColor.b}`;
+      dataCardsAux[key] = {
+        nome: replaceNullAreaName(key as string) as string,
+        quant: +areasMetadados?.areas[key]?.count,
+        color: newColorRGB,
+        id: value.id,
+      };
+
+      colorsUsed[newColorRGB] = 1;
+    });
+
+    setDataCards(dataCardsAux);
+  }, [areasMetadados]);
+
+  useEffect(() => {
+    const newRows: typeof rows = [];
     const newBaterias: typeof baterias = {
-      Todas: {
-        amarelo: 0,
-        verde: 0,
-        vermelho: 0,
-      },
+      amarelo: 0,
+      verde: 0,
+      vermelho: 0,
     };
-    const promises = Promise.all(
-      Object.entries(areas).map(async ([keys, value], index) => {
-        if (!filterArea(value.nome)) return;
-        newRows[value.nome] = [];
-        newBaterias[value.nome as string] = {
-          amarelo: 0,
-          verde: 0,
-          vermelho: 0,
-        };
-
-        const response = await fetch(
-          `https://bigdata.idals.com.br/data/status?de=${dataInicio}&area=${keys}`
-        );
-        const json = await response.json();
-
-        json.forEach((info: any, index: number) => {
-          if (info.funcionario === null) return;
-          let color: string | undefined = "";
-          if (calcularPercentBateria(info.bateria) > 12) {
-            newBaterias[value.nome as string].verde += 1;
-            newBaterias["Todas" as string].verde += 1;
-            color = undefined;
-          } else if (calcularPercentBateria(info.bateria) < 5) {
-            newBaterias[value.nome as string].vermelho += 1;
-            newBaterias["Todas"].vermelho += 1;
-            color = "#BC0202";
-          } else {
-            newBaterias[value.nome as string].amarelo += 1;
-            newBaterias["Todas"].amarelo += 1;
-            color = "#ECD03B";
-          }
-          newRows[value.nome].push([
-            <Circle
-              color={color}
-              style={{ minWidth: "2rem", height: "2rem" }}
-            />,
-            info.nome_funcionario,
-            info.funcionario.matricula,
-          ]);
-          newRows["Todas"].push([
-            <Circle
-              color={color}
-              style={{ minWidth: "2rem", height: "2rem" }}
-            />,
-            info.nome_funcionario,
-            info.funcionario.matricula,
-          ]);
-        });
-        totalDePessoasAux += json?.length;
-        const newColor = randomColorGeneratorRGBA(colorsUsed);
-        console.log(dataCards[value.nome]?.color);
-        const newColorRGB =
-          dataCards[value?.nome]?.color ||
-          `${newColor.r}, ${newColor.g}, ${newColor.b}`;
-        dataCardsAux[value?.nome] = {
-          nome: value?.nome,
-          quant: json?.length,
-          color: newColorRGB,
-        };
-
-        colorsUsed[newColorRGB] = 1;
-      })
-    );
+    ultimaPosicaoFuncPorArea.forEach((func) => {
+      if (areaSelected !== "Todas" && !(areaSelected in func.areas)) {
+        return;
+      }
+      let color: string | undefined = "";
+      if (calcularPercentBateria(func.bateria) > 12) {
+        newBaterias.verde += 1;
+        color = undefined;
+      } else if (calcularPercentBateria(func.bateria) < 5) {
+        newBaterias.vermelho += 1;
+        color = "#BC0202";
+      } else {
+        newBaterias.amarelo += 1;
+        color = "#ECD03B";
+      }
+      newRows.push([
+        <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
+        func.nome_funcionario,
+        "aaaaa",
+      ]);
+    });
 
     setBaterias(newBaterias);
     setRows(newRows);
-    promises.then(() => {
-      setDataCards(dataCardsAux);
-      setTotalDePessoas(totalDePessoasAux);
-    });
-  }, [areas]);
+  }, [ultimaPosicaoFuncPorArea, areaSelected]);
 
   return (
     <div
@@ -314,7 +324,7 @@ export default function Dashboard() {
                 onClick={(e) => {
                   setAreaSelected("Todas");
                 }}
-                number={totalPessoas}
+                number={areasMetadados ? +areasMetadados?.total[0]?.count : 0}
                 style={{
                   minWidth: "13rem",
                   backgroundColor: "#F5E8A4",
@@ -371,7 +381,9 @@ export default function Dashboard() {
                 {Object.values(dataCards)
                   .sort((a, b) => +(a.quant < b.quant))
                   .map((data, index) => {
-                    if (filterArea(data.nome))
+                    console.debug(data, areasSelectedFilter);
+
+                    if (filterArea(data.id))
                       return (
                         <Card
                           onClick={(e) => {
@@ -439,7 +451,7 @@ export default function Dashboard() {
             >
               <Circle />
               <span>{`${
-                baterias[areaSelected]?.verde || 0
+                baterias.verde || 0
               }  pessoas com bateria acima de 80%`}</span>
             </div>
             <div
@@ -453,7 +465,7 @@ export default function Dashboard() {
             >
               <Circle color="#ECD03B" />
               <span>
-                {`${baterias[areaSelected]?.amarelo || 0} pessoas com bateria
+                {`${baterias.amarelo || 0} pessoas com bateria
                 abaixo de 12%`}
               </span>
             </div>
@@ -469,7 +481,7 @@ export default function Dashboard() {
               <Circle color="#BC0202" />
               <span>
                 {`${
-                  baterias[areaSelected]?.vermelho || 0
+                  baterias.vermelho || 0
                 } pessoas com bateria em estado crítico`}
               </span>
             </div>
@@ -502,7 +514,7 @@ export default function Dashboard() {
                 { size: 1, name: "Nome do funcionário" },
                 { name: "Matrícula", size: 0.5 },
               ]}
-              rows={[...rowsAssembly()]}
+              rows={rows}
             />
           </div>
         </Paper>

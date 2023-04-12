@@ -60,7 +60,7 @@ export default function VisualizacaoIndividual() {
   }
   const mapRefTrajetoria = useRef<HTMLDivElement>(null);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
-  const [lineGap, setLineGap] = useState<number>(2);
+  const [lineGap, setLineGap] = useState<number>(1);
   const [minDist, setMinDist] = useState<number>(1);
   const [showLines, setShowLines] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
@@ -93,7 +93,7 @@ export default function VisualizacaoIndividual() {
   const timeDe = useRef(generateDate()[1]);
   const toastContext = useToast();
   useEffect(() => {
-    setLineGap(2);
+    setLineGap(1);
   }, [showLines]);
   const mapTrajetoria = useMap(
     mapRefTrajetoria as React.RefObject<HTMLDivElement>,
@@ -234,49 +234,54 @@ export default function VisualizacaoIndividual() {
       vectorUltimoPontoLayer.current = addVectorLayer(mapUltimoPonto, "green");
   }, [mapUltimoPonto]);
 
-  const updateWMSLayers = useCallback(() => {
-    updateWMS({
-      layer: wmsTrajetoriaLayer.current as TileLayer<TileWMS>,
-      options: {
-        id_localizacao: +(localizacao as number),
-        funcionario: user,
-        data: `${data.current}`,
-        timeDe: `${timeDe.current}`,
-        timeAte: `${timeAte.current}`,
-        gap: lineGap,
-        simplify_param: +isSimplify,
+  const updateWMSLayers = useCallback(
+    (newQuantValue?: boolean) => {
+      updateWMS({
+        layer: wmsTrajetoriaLayer.current as TileLayer<TileWMS>,
+        onGetFeaturesNumber: (value) => {
+          if (newQuantValue)
+            setQuantPontos((last) => ({ quant: value, max: value }));
+        },
+        options: {
+          id_localizacao: +(localizacao as number),
+          funcionario: user,
+          data: `${data.current}`,
+          timeDe: `${timeDe.current}`,
+          timeAte: `${timeAte.current}`,
+          gap: lineGap,
+          simplify_param: +isSimplify,
+          limit: newQuantValue ? null : quantPontos.quant,
+          min_dist: minDist,
+        },
+      });
 
-        min_dist: minDist,
-        limit: quantPontos.quant,
-      },
-    });
-
-    updateWMS({
-      layer: wmsTrajetoriaLineLayer.current as TileLayer<TileWMS>,
-      options: {
-        id_localizacao: +(localizacao as number),
-        funcionario: user,
-        data: `${data.current}`,
-        timeDe: `${timeDe.current}`,
-        timeAte: `${timeAte.current}`,
-        gap: lineGap,
-        simplify_param: +isSimplify,
-        limit: Math.floor(quantPontos.quant / lineGap),
-
-        min_dist: minDist,
-      },
-    });
-  }, [localizacao, minDist, quantPontos, user, lineGap, isSimplify]);
+      updateWMS({
+        layer: wmsTrajetoriaLineLayer.current as TileLayer<TileWMS>,
+        options: {
+          id_localizacao: +(localizacao as number),
+          funcionario: user,
+          data: `${data.current}`,
+          timeDe: `${timeDe.current}`,
+          timeAte: `${timeAte.current}`,
+          gap: lineGap,
+          simplify_param: +isSimplify,
+          limit: newQuantValue ? null : quantPontos.quant,
+          min_dist: minDist,
+        },
+      });
+    },
+    [localizacao, minDist, quantPontos, user, lineGap, isSimplify]
+  );
   useEffect(() => {
-    setQuantPontos({
-      max: quantPontos.max,
-      quant:
-        Math.trunc(quantPontos.quant / lineGap) + lineGap < quantPontos.max
-          ? Math.trunc(quantPontos.quant / lineGap) + lineGap
-          : quantPontos.max,
-    });
+    //setQuantPontos({
+    //   max: quantPontos.max,
+    //   quant:
+    //     Math.trunc(quantPontos.quant / lineGap) + lineGap < quantPontos.max
+    //       ? Math.trunc(quantPontos.quant / lineGap) + lineGap
+    //      : quantPontos.max,
+    // });
     if (wmsTrajetoriaLayer.current && wmsTrajetoriaLineLayer.current)
-      updateWMSLayers();
+      updateWMSLayers(true);
   }, [lineGap]);
   return (
     <>
@@ -515,7 +520,7 @@ export default function VisualizacaoIndividual() {
                         </label>
                       </div>
                     )}
-                    {showLines && (
+                    {showLines && isSimplify && (
                       <div
                         style={
                           fullscreen
@@ -637,12 +642,13 @@ export default function VisualizacaoIndividual() {
                           Quant. Pontos: {quantPontos.quant}
                         </label>
                         <Slider
-                          step={lineGap}
-                          onMouseUp={updateWMSLayers}
+                          max={quantPontos.max}
+                          onMouseUp={() => updateWMSLayers()}
+                          min={1}
                           onChange={(newValue) => {
                             setQuantPontos((lastValue) => {
                               if (newValue <= 1) {
-                                return { quant: lineGap, max: lastValue.max };
+                                return { quant: 1, max: lastValue.max };
                               }
                               if (newValue > lastValue.max) {
                                 return {
@@ -656,8 +662,6 @@ export default function VisualizacaoIndividual() {
                               };
                             });
                           }}
-                          min={0}
-                          max={quantPontos.max}
                           value={quantPontos.quant}
                         />
                       </div>
@@ -966,10 +970,10 @@ export default function VisualizacaoIndividual() {
                 }
                 if (e.key === "ArrowRight") {
                   setQuantPontos((lastValue) => {
-                    if (lastValue.quant + lineGap < lastValue.max) {
+                    if (lastValue.quant + 1 < lastValue.max) {
                       return {
                         max: lastValue.max,
-                        quant: lastValue.quant + lineGap,
+                        quant: lastValue.quant + 1,
                       };
                     }
                     return { quant: lastValue.max, max: lastValue.max };
@@ -978,13 +982,13 @@ export default function VisualizacaoIndividual() {
                 }
                 if (e.key === "ArrowLeft") {
                   setQuantPontos((lastValue) => {
-                    if (lastValue.quant - lineGap >= 1) {
+                    if (lastValue.quant - 1 >= 1) {
                       return {
                         max: lastValue.max,
-                        quant: lastValue.quant - lineGap,
+                        quant: lastValue.quant - 1,
                       };
                     }
-                    return { quant: lineGap, max: lastValue.max };
+                    return { quant: 1, max: lastValue.max };
                   });
                   return;
                 }

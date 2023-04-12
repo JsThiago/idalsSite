@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -17,6 +18,9 @@ import Table from "../../components/table";
 import Title from "../../components/title";
 import { toastContext } from "../../components/toast";
 import useMap, { addVectorLayer, drawPoint } from "../../hooks/useMap";
+import useData from "../../hooks/useQuery/useData";
+import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
+import { todayInStringFormat } from "../../utils/dates.utils";
 import randomColorGenerator from "../../utils/randomColorGenerator";
 interface DadosArea {
   id: number;
@@ -24,25 +28,41 @@ interface DadosArea {
 }
 
 export default function VisualizacaoEmGrupo() {
-  const [data, setData] = useState("");
+  const [data, setData] = useState(todayInStringFormat());
   const [de, setDe] = useState("07:00");
   const [ate, setAte] = useState("08:00");
   const [fullscreen, setFullscreen] = useState(false);
   const toastCall = useContext(toastContext).toastCall as Function;
+  const [funcionario, setFuncionario] = useState(-1);
+  const lastArea = useRef<undefined | number>();
+  const [funcionarioOptions, setFuncionarioOptions] = useState<
+    Array<{ value: string | number; label: string }>
+  >([]);
+  const {
+    data: localizacoes,
+    isError,
+    isLoading,
+  } = useLocalizacao("tipo=area");
   useEffect(() => {
-    fetch("https://api.idals.com.br/localizacao?tipo=area").then((response) => {
-      const areaOptionsAux: typeof areaOptions = [];
-      response.json().then((areas: Array<DadosArea>) => {
-        areas.forEach((areaValue) => {
-          areaOptionsAux.push({ value: areaValue.id, label: areaValue.nome });
-        });
-        setAreaOptions(areaOptionsAux);
-        setArea(areaOptionsAux[0]?.value as number);
-      });
+    filterLayer(funcionario);
+  }, [funcionario]);
+  useEffect(() => {
+    const areaOptionsAux: typeof areaOptions = [];
+    localizacoes?.forEach((areaData) => {
+      console.debug("areas", area);
+      if (area === null) return;
+      if (!(areaData.id in locationsCoordinates.current)) {
+        locationsCoordinates.current[areaData.id] = areaData.localizacao;
+      }
+      areaOptionsAux.push({ value: areaData?.id, label: areaData?.nome });
     });
-  }, []);
+    console.debug(areaOptionsAux);
+    setAreaOptions(areaOptionsAux);
+    setArea(areaOptionsAux[0]?.value as number);
+  }, [localizacoes]);
   const [rows, setRows] = useState<Array<any>>([]);
   const mapRefUltimoPonto = useRef<HTMLDivElement>(null);
+  const locationsCoordinates = useRef<Record<string, any>>({});
   const oldColorsLayers = useRef<Array<string>>([]);
   const [funcionarios, setFuncionarios] = useState<
     Array<[string, string, any, string]>
@@ -52,12 +72,74 @@ export default function VisualizacaoEmGrupo() {
     Array<{ label: string; value: string | number }>
   >([]);
   const [area, setArea] = useState<number | string>();
-
+  const {
+    data: dataStatus,
+    isError: isErrorDataStatus,
+    isLoading: isLoadingDataStatus,
+  } = useData(useMemo(() => [area as number], [area]));
   const mapUltimoPonto = useRef<Map>();
   mapUltimoPonto.current = useMap(
     mapRefUltimoPonto as React.RefObject<HTMLDivElement>
   );
+  const handlerFilterApply = useCallback(() => {
+    toastCall("Por favor aguarde", 1000);
+    removeAllLayers();
+    lastArea.current = area as number;
 
+    if (dataStatus.length === 0) {
+      setTimeout(() => {
+        if (area)
+          mapUltimoPonto.current?.getView().animate({
+            center: locationsCoordinates.current[area][0][0],
+            zoom: 19,
+          });
+        toastCall("Não existem dados.");
+      }, 1000);
+      return;
+    }
+
+    const funcionariosAux: typeof funcionarios = [];
+    const funcionarioOptionsAux: typeof funcionarioOptions = [];
+    const colors: Record<string, any> = {};
+    dataStatus.forEach((data) => {
+      const newColor = randomColorGenerator(colors);
+      colors[newColor] = 1;
+
+      const coordinates = JSON.parse(data.localizacao).coordinates;
+      funcionariosAux.push([
+        data.nome_funcionario,
+        "#" + newColor,
+        coordinates,
+        data.date,
+      ]);
+      funcionarioOptionsAux.push({
+        label: data.nome_funcionario,
+        value: data.id,
+      });
+      oldColorsLayers.current.push("#" + newColor);
+      const layer = addVectorLayer(
+        mapUltimoPonto.current as Map,
+        "#" + newColor,
+        10,
+        data.id
+      );
+      layers.current.push(layer);
+      if (
+        (funcionario !== -1 && data.id === funcionario) ||
+        funcionario === -1
+      ) {
+        drawPoint(coordinates, layer);
+      }
+    });
+
+    setFuncionarioOptions(funcionarioOptionsAux);
+    setFuncionarios(funcionariosAux);
+
+    mapUltimoPonto.current?.getView().animate({
+      center: funcionariosAux[0][2],
+      zoom: 19,
+    });
+  }, [setFuncionarios, setFuncionarioOptions, funcionario, dataStatus]);
   const removeAllLayers = useCallback(() => {
     layers.current.forEach((layer) => {
       mapUltimoPonto.current?.removeLayer(layer);
@@ -81,7 +163,6 @@ export default function VisualizacaoEmGrupo() {
     });
   }, [funcionarios]);
   const generateRows = useCallback(() => {
-    console.info("gerando linhas:", funcionarios);
     const rowsAux: typeof rows = [];
 
     funcionarios.forEach((funcionario, index) => {
@@ -115,6 +196,19 @@ export default function VisualizacaoEmGrupo() {
     setRows(rowsAux);
   }, [funcionarios]);
   useEffect(() => {
+    console.debug(dataStatus);
+    if (lastArea.current === undefined) {
+      return;
+    }
+
+    handlerFilterApply();
+  }, [dataStatus]);
+  useEffect(() => {
+    setFuncionarios([]);
+    setFuncionario(-1);
+  }, [area]);
+  useEffect(() => {
+    if (funcionarios.length === 0) return;
     generateRows();
     updateColorsLayers();
   }, [funcionarios, generateRows, updateColorsLayers]);
@@ -129,6 +223,25 @@ export default function VisualizacaoEmGrupo() {
     backgroundColor: "white",
     display: "flex",
   };
+  const filterLayer = useCallback(
+    (func: number) => {
+      if (func === -1) {
+        layers.current.forEach((layer) => {
+          layer.setVisible(true);
+        });
+        return;
+      }
+      layers.current.forEach((layer) => {
+        const id = layer.get("id");
+        if (id && id !== func) {
+          layer.setVisible(false);
+        } else {
+          layer.setVisible(true);
+        }
+      });
+    },
+    [layers]
+  );
   return (
     <div
       style={{ display: "flex", flexDirection: "column", position: "relative" }}
@@ -175,9 +288,18 @@ export default function VisualizacaoEmGrupo() {
           options={[
             {
               type: "selection",
-              value: 1,
+              value: funcionario,
+              onChange: (newFuncionario) => {
+                setFuncionario(+newFuncionario);
+              },
               name: "Funcionário:",
-              ops: [{ label: "Todos os presentes", value: 1 }],
+              ops: [
+                {
+                  label: "Todos os presentes",
+                  value: -1,
+                },
+                ...funcionarioOptions,
+              ],
             },
             {
               type: "selection",
@@ -217,58 +339,7 @@ export default function VisualizacaoEmGrupo() {
         />
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
           <Button
-            onClick={() => {
-              toastCall("Por favor aguarde", 1000);
-              removeAllLayers();
-              fetch("https://bigdata.idals.com.br/data/status?area=" + area)
-                .then((response) => {
-                  if (response.status !== 200) {
-                    setFuncionarios([]);
-                    setTimeout(() => {
-                      toastCall("Não existem dados.");
-                    }, 1000);
-
-                    removeAllLayers();
-                  }
-                  response.json().then((data: Array<any>) => {
-                    const funcionariosAux: typeof funcionarios = [];
-
-                    const colors: Record<string, any> = {};
-                    data.forEach((value: any) => {
-                      const newColor = randomColorGenerator(colors);
-                      colors[newColor] = 1;
-                      console.log(newColor);
-
-                      funcionariosAux.push([
-                        value.nome_funcionario,
-                        "#" + newColor,
-                        value.localizacao,
-                        value.date,
-                      ]);
-                      oldColorsLayers.current.push("#" + newColor);
-                      const layer = addVectorLayer(
-                        mapUltimoPonto.current as Map,
-                        "#" + newColor
-                      );
-                      layers.current.push(layer);
-                      drawPoint(value.localizacao, layer);
-                    });
-                    mapUltimoPonto.current?.getView().animate({
-                      center: funcionariosAux[0][2],
-                      zoom: 19,
-                    });
-
-                    setFuncionarios(funcionariosAux);
-                  });
-                })
-                .catch(() => {
-                  setFuncionarios([]);
-                  setTimeout(() => {
-                    toastCall("Ocorreu um erro. Por favor tente mais tarde");
-                  }, 1000);
-                  removeAllLayers();
-                });
-            }}
+            onClick={handlerFilterApply}
             label="Aplicar filtros"
             style={{ alignSelf: "flex-end", marginTop: "1rem" }}
           />
