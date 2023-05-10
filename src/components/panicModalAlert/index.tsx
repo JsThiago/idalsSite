@@ -78,6 +78,7 @@ export default function PanicModalAlert({
         >
           {page === 0 &&
             panics.map((panic, index) => {
+              console.info("esse é o pânico",panic)
               return (
                 <PanicMessage
                   panico={{

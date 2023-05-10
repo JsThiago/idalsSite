@@ -66,7 +66,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
           if (data?.func !== "panico") return;
           onMessage(data);
           toastCallTopRight(
-            `O funcionário ${data.args.message.funcionario} disparou um sinal de pánico`
+            `O funcionário ${data.args.message.nome_funcionario} disparou um sinal de pânico`
           );
           console.log("recebido" + e.data);
         });
@@ -125,16 +125,17 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
         setHasConnectionWithWs((last) => true);
       },
       (message: DataPanicWs) => {
+        console.info(message,"message")
         setPanics((last) => {
           const panicsClone = [...last];
           panicsClone.push({
             cracha: message.args.message.cracha,
-            date: message.args.message.data,
+            date: message.args.message.date,
             localizacao: message.args.message.localizacao,
             vinculado: message.args.message.vinculado,
             id: 1,
             tratado: false,
-            funcionario: message.func,
+            funcionario: message.args.message.nome_funcionario,
           });
           return panicsClone;
         });

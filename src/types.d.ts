@@ -71,9 +71,9 @@ export interface DataPanicWs {
 
       bateria: number;
       cracha: string;
-      data: string;
+      date: string;
       vinculado: boolean;
-      funcionario: string;
+      nome_funcionario: string;
     };
   };
 }
