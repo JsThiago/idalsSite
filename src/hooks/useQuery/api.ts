@@ -1,5 +1,4 @@
 import axios from "axios";
-import { async } from "q";
 import {
   BodyBigData,
   BodyDataStatus,
@@ -14,25 +13,27 @@ import {
   LocationData,
   PostFuncionario,
 } from "../../types";
+import { getLocalStorageAsync } from "../../utils/localStorageAsync";
 
-const TOKEN = () => `Bearer ${localStorage.getItem("token")}`;
-const AUTH_HEADER = {
-  Authorization: TOKEN(),
-};
-
+async function getAuthHeader() {
+  const token = await getLocalStorageAsync("token");
+  if (token === null) {
+    throw new Error("No token found in local storage");
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
-  headers: AUTH_HEADER,
 });
 
 const geoServer = axios.create({
   baseURL: process.env.REACT_APP_GEOSERVER_BASE_URL,
-  headers: AUTH_HEADER,
 });
 
 const bigData = axios.create({
   baseURL: process.env.REACT_APP_BIGDATA_BASE_URL,
-  headers: AUTH_HEADER,
 });
 
 export async function getFuncionarios() {
@@ -42,30 +43,40 @@ export async function getFuncionarios() {
 
 export async function postFuncionario(body: PostFuncionario) {
   console.log("onPost");
-  await api.post("funcionario", body);
+  await api.post("funcionario", body, {
+    headers: await getAuthHeader(),
+  });
   return;
 }
 
 export async function deleteFuncionario(id: number) {
-  await api.delete(`funcionario/${id}`);
+  await api.delete(`funcionario/${id}`, {
+    headers: await getAuthHeader(),
+  });
 }
 
 export async function getSemRelacao() {
-  const result = await api.get("semRelacoes");
+  const result = await api.get("semRelacoes", {
+    headers: await getAuthHeader(),
+  });
   return result.data;
 }
 
 export async function getLocalizacao(
   query?: string
 ): Promise<Array<LocationData>> {
-  const result = await api.get(`localizacao?${query}`);
-  console.debug(result, "result");
+  const result = await api.get(`localizacao?${query}`, {
+    headers: await getAuthHeader(),
+  });
   return result.data as Array<LocationData>;
 }
 
 export async function getFeatures(query?: string) {
   const result = await geoServer.get(
-    `idals/ows?SERVICE=WFS&VERSION=1.1.1&REQUEST=GetFeature&outputFormat=application/json&typeName=mapa:all2&viewparams=${query}`
+    `idals/ows?SERVICE=WFS&VERSION=1.1.1&REQUEST=GetFeature&outputFormat=application/json&typeName=mapa:all2&viewparams=${query}`,
+    {
+      headers: await getAuthHeader(),
+    }
   );
   return result.data;
 }
@@ -75,7 +86,9 @@ export async function getDashboard(
   query: string = ""
 ): Promise<DataBigDataStatus> {
   try {
-    const result = await bigData.post(`data/dashboard?${query}`, body);
+    const result = await bigData.post(`data/dashboard?${query}`, body, {
+      headers: await getAuthHeader(),
+    });
     console.warn(result);
     return result.data;
   } catch {
@@ -84,7 +97,13 @@ export async function getDashboard(
 }
 
 export async function getPanics(body: BodyPanics, query = "") {
-  const result = await bigData.post<Array<DataPanics>>(`panico?${query}`, body);
+  const result = await bigData.post<Array<DataPanics>>(
+    `panico?${query}`,
+    body,
+    {
+      headers: await getAuthHeader(),
+    }
+  );
   return result.data;
 }
 
@@ -92,7 +111,9 @@ export async function updatePanic(
   id: string | number,
   body: Partial<DataPanics>
 ) {
-  const result = await bigData.put<DataPanics>(`/panico/${id}`, body);
+  const result = await bigData.put<DataPanics>(`/panico/${id}`, body, {
+    headers: await getAuthHeader(),
+  });
   return result.data;
 }
 
@@ -102,7 +123,8 @@ export async function getDataStatus(
 ): Promise<Array<DataDataStatusTratada>> {
   const result = await bigData.post<Array<DataDataStatus>>(
     `data/status?${query}`,
-    body
+    body,
+    { headers: await getAuthHeader() }
   );
   return result.data.map((data) => {
     const areasFunc: Record<string, number> = {};
@@ -113,7 +135,20 @@ export async function getDataStatus(
   });
 }
 
+export async function validateToken() {
+  try {
+    const result = await api.get("/cracha", {
+      headers: await getAuthHeader(),
+    });
+    if (result.status === 200) return;
+    throw new Error("Not valid");
+  } catch (e) {
+    throw e;
+  }
+}
+
 export async function login(body: BodyLogin): Promise<DataLogin> {
   const result = await api.post<DataLogin>("/login", body);
+
   return result.data;
 }

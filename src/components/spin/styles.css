@@ -2,11 +2,11 @@
     border-radius: 50%;
     border: 6px solid #f4f4f4;
     border-top:6px solid rgb(65, 13, 91);
-    animation: spin 2s linear infinite;
-    -webkit-animation: spin 1s linear infinite; /* Safari */
+    animation: loading-spin 2s linear infinite;
+    -webkit-animation: loading-spin 1s linear infinite; /* Safari */
 }
 
-@keyframes spin {
+@keyframes loading-spin {
     0%{
         transform: rotate(0deg);
     }
@@ -15,7 +15,7 @@
     }
 }
 
-@-webkit-keyframes spin {
+@-webkit-keyframes loading-spin {
     0% { -webkit-transform: rotate(0deg); }
     100% { -webkit-transform: rotate(360deg); }
   }

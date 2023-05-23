@@ -2,6 +2,7 @@ import React, {
   MemoExoticComponent,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -26,6 +27,9 @@ import { BodyLogin } from "../types";
 import { throws } from "assert";
 import LoginErrado from "../erros/loginErrado";
 import { useToast } from "../components/toast";
+import { validateToken } from "../hooks/useQuery/api";
+import Spin from "../components/spin";
+import { setLocalStorageAsync } from "../utils/localStorageAsync";
 function BaseLayout({
   Component,
   onExit,
@@ -71,11 +75,21 @@ function BaseLayout({
 }
 
 function CustomRoutes() {
+  console.log("no custom routes");
   const { toastCallTopRight } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const login = useLogin();
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) setIsAuth(true);
+    validateToken()
+      .then(() => {
+        setIsAuth(true);
+      })
+      .catch(() => {
+        console.info("Token invalid");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
   function onExit() {
     localStorage.removeItem("token");
@@ -86,9 +100,12 @@ function CustomRoutes() {
     try {
       login(
         dadosLogin,
-        (data) => {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("usuario", JSON.stringify(data.funcionario));
+        async (data) => {
+          await setLocalStorageAsync("token", data.token);
+          await setLocalStorageAsync(
+            "usuario",
+            JSON.stringify(data.funcionario)
+          );
           setIsAuth(true);
         },
         (err, body, context) => {
@@ -101,14 +118,49 @@ function CustomRoutes() {
     }
   }, []);
   const [isAuth, setIsAuth] = useState(false);
-  if (!isAuth) {
-    return <Login onLogin={onLogin} />;
+  function Loading() {
+    return useMemo(
+      () => (
+        <div
+          style={{
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "f4f4f4",
+            flexDirection: "column",
+            rowGap: "10rem",
+          }}
+        >
+          <Spin
+            style={{
+              width: "10rem",
+              height: "10rem",
+              transform: "translate(100%, -50%)",
+              zIndex: 99,
+            }}
+          />
+          <h2>Por favor aguarde</h2>
+        </div>
+      ),
+      []
+    );
   }
+  console.info("auth", isAuth);
   function baseLayout(
     Component: (() => JSX.Element) | MemoExoticComponent<() => JSX.Element>
   ) {
     return <BaseLayout onExit={onExit} Component={Component} />;
   }
+  if (isLoading) {
+    return <Loading />;
+  }
+  if (!isAuth) {
+    return <Login onLogin={onLogin} />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>

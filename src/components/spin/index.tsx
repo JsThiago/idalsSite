@@ -7,5 +7,6 @@ export default function Spin({
   style?: React.CSSProperties;
   className?: string;
 }) {
-  return <div style={style} className={"component-spin " + className}></div>;
+  console.log("no spin");
+  return <div style={style} className={"component-spin " + className} />;
 }

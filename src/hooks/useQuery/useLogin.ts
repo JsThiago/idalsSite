@@ -7,15 +7,15 @@ export default function useLogin() {
 
   function login(
     body: BodyLogin,
-    cb: (data: DataLogin) => void,
+    cb: (data: DataLogin) => void | Promise<void>,
     cbErr?: (err: unknown, body: BodyLogin, context: unknown) => void
   ) {
     try {
       console.debug("login");
       const { mutate, data, error, isLoading } = mutateLogin;
       mutate(body, {
-        onSuccess: (data: DataLogin) => {
-          cb(data);
+        onSuccess: async (data: DataLogin) => {
+          await cb(data);
         },
         onError: (err, body, context) => {
           cbErr?.(err, body, context);
