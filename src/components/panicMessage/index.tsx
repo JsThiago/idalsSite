@@ -1,3 +1,6 @@
+import { useGlobalContext } from "../../context/globalContext";
+import usePanic from "../../hooks/useQuery/usePanic";
+
 interface Panico {
   //area:string;
   funcionario: string;
@@ -7,9 +10,12 @@ interface Panico {
 
 export default function PanicMessage({
   panico,
+  isAtivo = false,
 }: {
   panico?: Panico & { panicNumber: string | number };
+  isAtivo?: boolean;
 }) {
+  const { updatePanics } = useGlobalContext();
   return (
     <div
       style={{
@@ -32,17 +38,24 @@ export default function PanicMessage({
         }
         <li>Horário de acionamento: {panico?.horario}</li>
       </ul>
-      <span
-        style={{
-          color: "#410D5B",
-          textDecoration: "underline",
-          alignSelf: "flex-end",
-          marginRight: "1rem",
-          cursor: "pointer",
-        }}
-      >
-        Declarar como tratado
-      </span>
+      {isAtivo && (
+        <span
+          onClick={() => {
+            updatePanics(+(panico?.panicNumber as string | number), {
+              tratado: true,
+            });
+          }}
+          style={{
+            color: "#410D5B",
+            textDecoration: "underline",
+            alignSelf: "flex-end",
+            marginRight: "1rem",
+            cursor: "pointer",
+          }}
+        >
+          Declarar como tratado
+        </span>
+      )}
     </div>
   );
 }

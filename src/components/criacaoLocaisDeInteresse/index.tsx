@@ -23,19 +23,23 @@ import "./styles.css";
 export default function CriacaoLocaisDeInteresse({
   initialMarkers,
   initialTipoSugerido,
-  style
-}:{initialMarkers?:L.LatLng[],initialTipoSugerido?:string,style?:React.CSSProperties}) {
+  style,
+}: {
+  initialMarkers?: L.LatLng[];
+  initialTipoSugerido?: string;
+  style?: React.CSSProperties;
+}) {
   const limiteSobreposicao = 4;
 
-  const markerLocations = useRef<L.LatLng[]>(initialMarkers||[]);
-  const tipoSugerido = useRef(initialTipoSugerido||"");
+  const markerLocations = useRef<L.LatLng[]>(initialMarkers || []);
+  const tipoSugerido = useRef(initialTipoSugerido || "");
   const [opcoes, setOpcoes] = useState<Array<string>>([]);
   const [opcao, setOpcao] = useState(tipoSugerido.current);
   const mapRefDiv = useRef<HTMLElement>();
   const mapRef = useRef<Map>();
   const [tipo, setTipo] = useState<string>("");
   const [descricao, setDescricao] = useState<string>("");
-  const toastCall = useContext(toastContext).toastCall as Function;
+  const toastCall = useContext(toastContext).toastCall;
   useEffect(() => {
     setTipo(tipoSugerido.current);
   }, [tipoSugerido.current]);
@@ -56,12 +60,18 @@ export default function CriacaoLocaisDeInteresse({
 
   const sendData = useCallback(() => {
     console.info(markerLocations.current, tipoSugerido.current);
-    let localizacao: Array<[number, number]>|number[] = [];
-    if(tipo === "ponto"){
-      localizacao = [markerLocations.current[0].lng,markerLocations.current[0].lat] as number[]; 
-    }else
+    let localizacao: Array<[number, number]> | number[] = [];
+    if (tipo === "ponto") {
+      localizacao = [
+        markerLocations.current[0].lng,
+        markerLocations.current[0].lat,
+      ] as number[];
+    } else
       markerLocations.current.forEach((point) => {
-       (localizacao as Array<[number,number]>).push([point.lng, point.lat] as [number, number]);
+        (localizacao as Array<[number, number]>).push([
+          point.lng,
+          point.lat,
+        ] as [number, number]);
       });
     const data = JSON.stringify({
       nome,
@@ -74,19 +84,20 @@ export default function CriacaoLocaisDeInteresse({
       method: "POST",
       body: data,
       headers: { "content-type": "application/json" },
-    }).then((response) => {
-      if (response.status !== 201) {
-        toastCall("Ocorreu um erro. Por favor tente novamente");
-        return;
-      }
+    })
+      .then((response) => {
+        if (response.status !== 201) {
+          toastCall("Ocorreu um erro. Por favor tente novamente");
+          return;
+        }
 
-
-      toastCall("Cadastrado com sucesso ");
-    }).finally(()=>{
-      setNome("");
-      setDescricao("");
-      cleanAllMarkers();
-    });
+        toastCall("Cadastrado com sucesso ");
+      })
+      .finally(() => {
+        setNome("");
+        setDescricao("");
+        cleanAllMarkers();
+      });
   }, [descricao, nome, tipo]);
   function markerIcon(i: number, size = 20) {
     let html = `<div className="map-marker" style="width: ${size}px; height: ${size}px; background-color: #90f; border-radius: 50%; color: #fff; font-size: 26px; opacity: 50%;">${i}</div>`;
@@ -340,12 +351,11 @@ export default function CriacaoLocaisDeInteresse({
   return (
     <Paper
       style={{
-   
         display: "flex",
         padding: "1em 0rem 3rem 0rem",
         flexDirection: "column",
         boxShadow: "0.5px 0.5px 1px rgba(0,0,0,0.05)",
-        ...style
+        ...style,
       }}
     >
       <div

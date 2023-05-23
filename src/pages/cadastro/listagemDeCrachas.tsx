@@ -23,9 +23,13 @@ interface DadosCracha {
 }
 export default function ListagemDeCrachas() {
   const [openModal, setOpenModal] = useState(false);
-  const [functionDelete,setFunctionDelete] = useState<()=>void>(()=>()=>{}) 
-  const [openModalDelete,setOpenModalDelete] = useState(false); 
-  const [subTitleDelete,setSubTitleDelete] = useState<string|Array<React.ReactElement>>("")
+  const [functionDelete, setFunctionDelete] = useState<() => void>(() => () => {
+    return;
+  });
+  const [openModalDelete, setOpenModalDelete] = useState(false);
+  const [subTitleDelete, setSubTitleDelete] = useState<
+    string | Array<React.ReactElement>
+  >("");
   const [crachas, setCrachas] = useState<Array<DadosCracha>>([]);
   const [rows, setRows] = useState<
     Array<[JSX.Element, string, string, string, string, JSX.Element]>
@@ -57,18 +61,21 @@ export default function ListagemDeCrachas() {
             setSubTitleDelete(
               breakLine(
                 `Tem certeza que deseja remover o crachá:<br/>
-            ${cracha.nome}?`))
-            setFunctionDelete(()=>()=>{
-            fetch("https://api.idals.com.br/cracha/" + cracha.devEUI, {
-              method: "DELETE",
-            }).then((response) => {
-              if (response.status === 200) {
-                const crachasAux = [...crachas];
-                crachasAux.splice(index,1);
-                setCrachas(crachasAux);
-                toastCall("Crachá removido com sucesso");
-              } else toastCall("Erro, Por favor tente mais tarde");
-            })});
+            ${cracha.nome}?`
+              )
+            );
+            setFunctionDelete(() => () => {
+              fetch("https://api.idals.com.br/cracha/" + cracha.devEUI, {
+                method: "DELETE",
+              }).then((response) => {
+                if (response.status === 200) {
+                  const crachasAux = [...crachas];
+                  crachasAux.splice(index, 1);
+                  setCrachas(crachasAux);
+                  toastCall("Crachá removido com sucesso");
+                } else toastCall("Erro, Por favor tente mais tarde");
+              });
+            });
           }}
         />,
       ]);
@@ -79,10 +86,14 @@ export default function ListagemDeCrachas() {
   useEffect(attRows, [attRows]);
   return (
     <>
-    <DeleteConfirm deleteFunc={functionDelete} subtitle={subTitleDelete} onClose={()=>{
-        setOpenModalDelete(false);
-
-      }} visibility={openModalDelete}/>
+      <DeleteConfirm
+        deleteFunc={functionDelete}
+        subtitle={subTitleDelete}
+        onClose={() => {
+          setOpenModalDelete(false);
+        }}
+        visibility={openModalDelete}
+      />
       <Modal visibility={openModal}>
         <Paper
           style={{

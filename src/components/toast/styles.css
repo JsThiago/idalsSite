@@ -2,9 +2,14 @@
   animation: fadein 0.5, fadeout 0.5s 2.5s;
   -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
-.toast-top-right{
-  animation: fadeinright 0.5, fadeoutright 0.5s 2.5s;
-  -webkit-animation: fadeinright 0.5s, fadeoutright 0.5s 2.5s;
+.toast-top-right-fadein{
+  animation: fadeinright 0.5s;
+  -webkit-animation: fadeinright 0.5s;
+}
+.toast-top-right-fadeout{
+  animation: fadeoutright;
+  animation-duration:1s;
+  -webkit-animation: fadeoutright 0.5s;
 }
 
 .toast-panic{
@@ -16,23 +21,25 @@
 
 @keyframes fadeinright {
   from {
-    right: 0;
-    opacity: 0;
+    opacity:0;
+    right: -1000000px;
   }
   to {
-    right: 3%;
-    opacity: 1;
+      opacity:1;
+    right: 0px;
   }
 }
 
 @-webkit-keyframes fadeinright {
   from {
-    right: 0;
-    opacity: 0;
+    right: -100%;
+    opacity:0;
+
   }
   to {
     right: 3%;
-    opacity: 1;
+    opacity:1;
+
   }
 }
 
@@ -43,7 +50,7 @@
     opacity: 1;
   }
   to {
-    right: 0;
+    right: -100%;
     opacity: 0;
   }
 }
@@ -53,7 +60,7 @@
     opacity: 1;
   }
   to {
-    tight: 0;
+    right: -100%;
     opacity: 0;
   }
 }

@@ -64,7 +64,7 @@ export default function PanicModalAlert({
               setPage(1);
             }}
           >
-            Marcar como tratado
+            Tratados
           </span>
         </div>
         <div
@@ -77,12 +77,31 @@ export default function PanicModalAlert({
           }}
         >
           {page === 0 &&
-            panics.map((panic, index) => {
-              console.info("esse é o pânico",panic)
+            panics.naoTratados.map((panic, index) => {
+              return (
+                <PanicMessage
+                  isAtivo
+                  panico={{
+                    panicNumber: panic.id,
+
+                    funcionario: panic?.funcionario,
+                    horario: `${
+                      new Date(panic?.date)
+                        .toISOString()
+                        .split("T")[1]
+                        .split(".")[0]
+                    } ${new Date(panic?.date).toISOString().split("T")[0]}`,
+                  }}
+                />
+              );
+            })}
+
+          {page === 1 &&
+            panics.tratados.map((panic, index) => {
               return (
                 <PanicMessage
                   panico={{
-                    panicNumber: index + 1,
+                    panicNumber: panic.id,
 
                     funcionario: panic?.funcionario,
                     horario: `${

@@ -7,6 +7,16 @@ export interface PostFuncionario {
   area: string;
 }
 
+export interface BodyLogin {
+  login: string;
+  senha: string;
+}
+
+export interface DataLogin {
+  funcionario: DadosFuncionarios;
+  token: string;
+  code?: number;
+}
 export interface DadosFuncionarios {
   area: string;
   createAt: string;
@@ -63,12 +73,17 @@ export interface LocationData {
   localizacao: Array<any>;
 }
 
+export interface PanicsAll {
+  tratados: Array<Panics>;
+  naoTratados: Array<Panics>;
+}
+
 export interface DataPanicWs {
   func: string;
   args: {
     message: {
       localizacao: [number, number];
-
+      id: number;
       bateria: number;
       cracha: string;
       date: string;

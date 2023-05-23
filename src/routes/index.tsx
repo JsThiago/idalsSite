@@ -1,4 +1,9 @@
-import React, { MemoExoticComponent, useEffect, useState } from "react";
+import React, {
+  MemoExoticComponent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import BarraDeNavegacao from "../components/barraDeNavegacao";
 import Footer from "../components/footer";
@@ -16,12 +21,17 @@ import packageJson from "../../package.json";
 import Dashboard from "../pages/dashboard";
 import Relatorio from "../pages/relatorio";
 import Login from "../pages/login";
+import useLogin from "../hooks/useQuery/useLogin";
+import { BodyLogin } from "../types";
+import { throws } from "assert";
+import LoginErrado from "../erros/loginErrado";
+import { useToast } from "../components/toast";
 function BaseLayout({
   Component,
-  onExit
+  onExit,
 }: {
   Component: (() => JSX.Element) | MemoExoticComponent<() => JSX.Element>;
-  onExit:()=>void
+  onExit: () => void;
 }) {
   return (
     <div
@@ -38,7 +48,7 @@ function BaseLayout({
       <div
         style={{ display: "flex", flexDirection: "row", position: "relative" }}
       >
-        <Menu onExit={onExit}/>
+        <Menu onExit={onExit} />
         <div
           style={{
             display: "flex",
@@ -53,7 +63,7 @@ function BaseLayout({
           </div>
         </div>
       </div>
-      <div style={{backgroundColor:"black",flex:1,display:"flex"}}>
+      <div style={{ backgroundColor: "black", flex: 1, display: "flex" }}>
         <Footer style={{ padding: "2rem" }} />
       </div>
     </div>
@@ -61,31 +71,50 @@ function BaseLayout({
 }
 
 function CustomRoutes() {
-  useEffect(()=>{
+  const { toastCallTopRight } = useToast();
+  const login = useLogin();
+  useEffect(() => {
     const token = localStorage.getItem("token");
-    if(token) setIsAuth(true)
-  },[])
-  function onExit(){
+    if (token) setIsAuth(true);
+  }, []);
+  function onExit() {
     localStorage.removeItem("token");
     setIsAuth(false);
   }
-  const [isAuth,setIsAuth] = useState(false);
-  if(!isAuth){
-    return <Login onLogin={()=>{
-      setIsAuth(true);
-      localStorage.setItem("token","token")
-    }}/>
+
+  const onLogin = useCallback((dadosLogin: BodyLogin) => {
+    try {
+      login(
+        dadosLogin,
+        (data) => {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("usuario", JSON.stringify(data.funcionario));
+          setIsAuth(true);
+        },
+        (err, body, context) => {
+          toastCallTopRight("Usuário ou senha inválidos");
+          throw new LoginErrado("Usuário ou senha inválidos");
+        }
+      );
+    } catch (e) {
+      console.error("error");
+    }
+  }, []);
+  const [isAuth, setIsAuth] = useState(false);
+  if (!isAuth) {
+    return <Login onLogin={onLogin} />;
   }
-  function baseLayout(Component:(() => JSX.Element) | MemoExoticComponent<() => JSX.Element>){
-      return <BaseLayout onExit={onExit} Component={Component}/>
+  function baseLayout(
+    Component: (() => JSX.Element) | MemoExoticComponent<() => JSX.Element>
+  ) {
+    return <BaseLayout onExit={onExit} Component={Component} />;
   }
   return (
     <BrowserRouter>
       <Routes>
-      
         <Route path="/" element={baseLayout(Dashboard)} />
-        <Route path="/cadastro" element={baseLayout(Cadastro)}  />
-        <Route path="/vinculos" element={baseLayout(Vinculos) } />
+        <Route path="/cadastro" element={baseLayout(Cadastro)} />
+        <Route path="/vinculos" element={baseLayout(Vinculos)} />
         <Route
           path="/areasDeInteresse"
           element={baseLayout(AreasDeInteresse)}
@@ -107,10 +136,7 @@ function CustomRoutes() {
           path="visualizacaoEmGrupo"
           element={baseLayout(VisualizacaoEmGrupo)}
         />
-        <Route
-          path="relatorio"
-          element={baseLayout(Relatorio)}
-        />
+        <Route path="relatorio" element={baseLayout(Relatorio)} />
         <Route path="*" element={baseLayout(NotFound)} />
       </Routes>
     </BrowserRouter>

@@ -3,25 +3,36 @@ import { async } from "q";
 import {
   BodyBigData,
   BodyDataStatus,
+  BodyLogin,
   BodyPanics,
   DadosFuncionarios,
   DataBigDataStatus,
   DataDataStatus,
   DataDataStatusTratada,
+  DataLogin,
   DataPanics,
   LocationData,
   PostFuncionario,
 } from "../../types";
+
+const TOKEN = () => `Bearer ${localStorage.getItem("token")}`;
+const AUTH_HEADER = {
+  Authorization: TOKEN(),
+};
+
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
+  headers: AUTH_HEADER,
 });
 
 const geoServer = axios.create({
   baseURL: process.env.REACT_APP_GEOSERVER_BASE_URL,
+  headers: AUTH_HEADER,
 });
 
 const bigData = axios.create({
   baseURL: process.env.REACT_APP_BIGDATA_BASE_URL,
+  headers: AUTH_HEADER,
 });
 
 export async function getFuncionarios() {
@@ -36,7 +47,7 @@ export async function postFuncionario(body: PostFuncionario) {
 }
 
 export async function deleteFuncionario(id: number) {
-  await api.delete("funcionario/" + id);
+  await api.delete(`funcionario/${id}`);
 }
 
 export async function getSemRelacao() {
@@ -47,7 +58,7 @@ export async function getSemRelacao() {
 export async function getLocalizacao(
   query?: string
 ): Promise<Array<LocationData>> {
-  const result = await api.get("localizacao?" + query);
+  const result = await api.get(`localizacao?${query}`);
   console.debug(result, "result");
   return result.data as Array<LocationData>;
 }
@@ -72,8 +83,16 @@ export async function getDashboard(
   }
 }
 
-export async function getPanics(body: BodyPanics) {
-  const result = await bigData.post<Array<DataPanics>>("panico", body);
+export async function getPanics(body: BodyPanics, query = "") {
+  const result = await bigData.post<Array<DataPanics>>(`panico?${query}`, body);
+  return result.data;
+}
+
+export async function updatePanic(
+  id: string | number,
+  body: Partial<DataPanics>
+) {
+  const result = await bigData.put<DataPanics>(`/panico/${id}`, body);
   return result.data;
 }
 
@@ -92,4 +111,9 @@ export async function getDataStatus(
     });
     return { ...data, areas: areasFunc };
   });
+}
+
+export async function login(body: BodyLogin): Promise<DataLogin> {
+  const result = await api.post<DataLogin>("/login", body);
+  return result.data;
 }

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Button from "../../components/button";
 import Card from "../../components/card";
 import ElipsePerson from "../../components/card/icons/people";
 import Circle from "../../components/circle";
@@ -15,16 +14,7 @@ import PanicNotification from "../../components/panicNotification";
 import PanicModalAlert from "../../components/panicModalAlert";
 import useDashboard from "../../hooks/useQuery/useDashboard";
 import useDataStatus from "../../hooks/useQuery/useData";
-import { DataBigDataStatus } from "../../types";
-import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
-interface DadosLocalizacao {
-  nome: string;
-  tipo: string;
-  id: number;
-  quant: number;
-}
 export default function Dashboard() {
-  const [totalPessoas, setTotalDePessoas] = useState<number>(0);
   const [dataInicio, setDataInicio] = useState("2010-01-01");
   const replaceNullAreaName = useCallback((areaName: string) => {
     if (areaName === "null") {
@@ -86,7 +76,6 @@ export default function Dashboard() {
     ),
     ""
   );
-  console.debug("funcs", ultimaPosicaoFuncPorArea);
   const {
     data: areasMetadados,
     isError: isErrorMetadados,
@@ -102,7 +91,7 @@ export default function Dashboard() {
     if (Object.keys(areasOptions).length > 0) {
       return;
     }
-    let areasOptionsAux: typeof areasOptions = {};
+    const areasOptionsAux: typeof areasOptions = {};
     Object.entries(areasMetadados?.areas)?.forEach(([key, value]) => {
       areasOptionsAux[value.id] = key;
     });
@@ -146,6 +135,7 @@ export default function Dashboard() {
       vermelho: 0,
     };
     ultimaPosicaoFuncPorArea.forEach((func) => {
+      const date = new Date(func.date);
       if (areaSelected !== "Todas" && !(areaSelected in func.areas)) {
         return;
       }
@@ -163,7 +153,9 @@ export default function Dashboard() {
       newRows.push([
         <Circle color={color} style={{ minWidth: "2rem", height: "2rem" }} />,
         func.nome_funcionario,
-        "aaaaa",
+        `${date.toLocaleDateString("pt-br")} ${date.toLocaleTimeString(
+          "pt-br"
+        )}`,
       ]);
     });
 
@@ -394,7 +386,7 @@ export default function Dashboard() {
                           title={data.nome}
                           color={data.color}
                           titleColor={data.color}
-                        ></Card>
+                        />
                       );
                   })}
               </div>
@@ -512,7 +504,7 @@ export default function Dashboard() {
                   },
                 },
                 { size: 1, name: "Nome do funcionário" },
-                { name: "Matrícula", size: 0.5 },
+                { name: "Última posição", size: 0.5 },
               ]}
               rows={rows}
             />
