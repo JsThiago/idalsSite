@@ -120,6 +120,7 @@ export async function updatePanic(
   id: string | number,
   body: Partial<DataPanics>
 ) {
+  console.info("update", body);
   const result = await bigData.put<DataPanics>(`/panico/${id}`, body, {
     headers: await getAuthHeader(),
   });

@@ -83,14 +83,13 @@ export default function PanicModalAlert({
                   isAtivo
                   panico={{
                     panicNumber: panic.id,
+                    area: panic.areas?.[panic.areas.length - 1]?.f2,
+                    telefone: panic.telefone,
 
                     funcionario: panic?.funcionario,
-                    horario: `${
-                      new Date(panic?.date)
-                        .toISOString()
-                        .split("T")[1]
-                        .split(".")[0]
-                    } ${new Date(panic?.date).toISOString().split("T")[0]}`,
+                    horario: `${new Date(panic.date).toLocaleTimeString(
+                      "pt-br"
+                    )} ${new Date(panic.date).toLocaleDateString("pt-br")}`,
                   }}
                 />
               );
@@ -102,14 +101,21 @@ export default function PanicModalAlert({
                 <PanicMessage
                   panico={{
                     panicNumber: panic.id,
-
+                    login_confirmacao: panic.login_confirmacao,
+                    area: panic.areas?.[0]?.f2,
+                    telefone: panic.telefone,
+                    date_confirmacao:
+                      panic?.date_confirmacao !== null
+                        ? `${new Date(
+                            panic?.date_confirmacao as string
+                          ).toLocaleTimeString("pt-br")} ${new Date(
+                            panic?.date_confirmacao as string
+                          ).toLocaleDateString("pt-br")}`
+                        : "desconhecido",
                     funcionario: panic?.funcionario,
-                    horario: `${
-                      new Date(panic?.date)
-                        .toISOString()
-                        .split("T")[1]
-                        .split(".")[0]
-                    } ${new Date(panic?.date).toISOString().split("T")[0]}`,
+                    horario: `${new Date(panic.date).toLocaleTimeString(
+                      "pt-br"
+                    )} ${new Date(panic.date).toLocaleDateString("pt-br")}`,
                   }}
                 />
               );

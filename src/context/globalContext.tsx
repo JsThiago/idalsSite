@@ -112,7 +112,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
         const lastCopy = { ...last };
         lastCopy.naoTratados = lastCopy.naoTratados.filter((panic) => {
           if (panic.id === id) {
-            lastCopy.tratados.push(panic);
+            lastCopy.tratados.push({ ...panic, ...body });
             return false;
           }
 
@@ -132,9 +132,11 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
   const socketRef = useRef<null | WebSocket>(null);
   const refTimer = useRef<number | null | undefined>(undefined);
   const { updatePanic } = usePanic({
-    onSuccessUpdate: (data) => {
+    onSuccessUpdate: async (data) => {
       updatePanics(data.id as number, {
         tratado: true,
+        date_confirmacao: data.date_confirmacao,
+        login_confirmacao: data.login_confirmacao,
       });
     },
     onSuccess: (data: Array<Panics>) => {
@@ -208,6 +210,10 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
           id: message.args.message.id,
           tratado: false,
           funcionario: message.args.message.nome_funcionario,
+          telefone: message.args.message.telefone,
+          date_confirmacao: message.args.message.date_confirmacao,
+          login_confirmacao: message.args.message.login_confirmacao,
+          areas: message.args.message.areas,
         });
         return { naoTratados: panicsClone, tratados: last.tratados };
       });

@@ -12,7 +12,7 @@ export default function usePanic({
   onSuccess?: (data: Array<Panics>) => void;
   body?: BodyPanics;
   query?: string;
-  onSuccessUpdate?: (data: DataPanics) => void;
+  onSuccessUpdate?: (data: DataPanics) => void | Promise<void>;
 }) {
   const [panicos, setPanicos] = useState<Array<DataPanics>>([]);
   const {
@@ -31,8 +31,8 @@ export default function usePanic({
     mutateUpdate(
       { body, id },
       {
-        onSuccess: (data) => {
-          onSuccessUpdate?.(data);
+        onSuccess: async (data) => {
+          await onSuccessUpdate?.(data);
         },
       }
     );
@@ -46,11 +46,20 @@ export default function usePanic({
           const dataTratado: Array<Panics> = data.map((panico) => {
             return {
               cracha: panico.identificador_cracha,
-              date: panico.data,
+              date: panico.date,
               funcionario: panico.nome_funcionario,
               id: panico.id,
               localizacao: panico.localizacao,
               tratado: panico.tratado,
+              areas: [
+                {
+                  f1: -1,
+                  f2: panico.area,
+                },
+              ],
+              login_confirmacao: panico.login_confirmacao,
+              telefone: panico.telefone,
+              date_confirmacao: panico.date_confirmacao,
             };
           });
           onSuccess?.(dataTratado);

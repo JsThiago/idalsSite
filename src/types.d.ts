@@ -97,6 +97,10 @@ export interface DataPanicWs {
       date: string;
       vinculado: boolean;
       nome_funcionario: string;
+      telefone: string;
+      areas: Array<AreaPanics>;
+      login_confirmacao: string;
+      date_confirmacao: string;
     };
   };
 }
@@ -109,6 +113,15 @@ export interface Panics {
   date: string;
   vinculado?: boolean;
   funcionario: string;
+  login_confirmacao?: string;
+  date_confirmacao?: string;
+  telefone: string;
+  areas: Array<AreaPanics>;
+}
+
+export interface AreaPanics {
+  f1: number;
+  f2: string;
 }
 
 export interface DataPanics {
@@ -118,11 +131,14 @@ export interface DataPanics {
   bateria: number;
   origem: string;
   localizacao: [number, number];
-  data: string;
+  date: string;
   area: string;
   telefone: string;
   tratado: boolean;
   buffered: number;
+  date_confirmacao: string;
+  login_confirmacao: string;
+  telefone: string;
 }
 
 export interface BodyPanics {
