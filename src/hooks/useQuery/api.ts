@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   BodyBigData,
   BodyDataStatus,
+  BodyLocalizacao,
   BodyLogin,
   BodyPanics,
   DadosFuncionarios,
@@ -37,7 +38,9 @@ const bigData = axios.create({
 });
 
 export async function getFuncionarios() {
-  const data = await api.get("funcionario");
+  const data = await api.get("funcionario", {
+    headers: await getAuthHeader(),
+  });
   return data.data as Array<DadosFuncionarios>;
 }
 
@@ -60,6 +63,12 @@ export async function getSemRelacao() {
     headers: await getAuthHeader(),
   });
   return result.data;
+}
+
+export async function postLocalizacao(body: BodyLocalizacao) {
+  await api.post("/localizacao", body, {
+    headers: await getAuthHeader(),
+  });
 }
 
 export async function getLocalizacao(

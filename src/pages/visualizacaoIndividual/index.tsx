@@ -25,9 +25,9 @@ import useMap, {
 } from "../../hooks/useMap";
 import { DadosFuncionarios, DataLocalizacao } from "../../types";
 import { useToast } from "../../components/toast";
-import TileSource from "ol/source/Tile";
 import TileWMS from "ol/source/TileWMS";
-const DATE = new Date();
+import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
+import useFuncionarios from "../../hooks/useQuery/useFuncionarios";
 export default function VisualizacaoIndividual() {
   const stylesFullscreen: React.CSSProperties = {
     position: "fixed",
@@ -41,6 +41,10 @@ export default function VisualizacaoIndividual() {
     display: "flex",
   };
   const [fullscreen, setFullscreen] = useState<boolean>(false);
+  const { data: dataLocalizacao, isLoading: isLoadingLocalizacao } =
+    useLocalizacao("tipo=area");
+  const { data: dataFuncionario, isLoading: isLoadingFuncionario } =
+    useFuncionarios();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isSimplify, setIsSimplify] = useState<boolean>(false);
@@ -48,8 +52,8 @@ export default function VisualizacaoIndividual() {
   const [fullscreenLastPoint, setFullscreenLastPoint] =
     useState<boolean>(false);
   function generateDate() {
-    let date = new Date();
-    let time: Array<string> = [];
+    const date = new Date();
+    const time: Array<string> = [];
     date.setHours(date.getHours() - 3);
     time.push(date.toISOString().split("T")[1].split(".")[0].slice(0, -3));
     if (time[0].slice(0, 2) === "00") time[0] = "23:59";
@@ -64,15 +68,15 @@ export default function VisualizacaoIndividual() {
   const [minDist, setMinDist] = useState<number>(1);
   const [showLines, setShowLines] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
-  const mapRefUltimaRota = useRef<HTMLDivElement>(null);
   const wmsTrajetoriaLayer = useRef<TileLayer<any> | null>(null);
   const wmsTrajetoriaLineLayer = useRef<TileLayer<any> | null>(null);
-  const funcionariosInfo = useRef<Record<string, { telefone: string }>>({});
+  const funcionariosInfo = useRef<Record<string, Partial<DadosFuncionarios>>>(
+    {}
+  );
   const vectorUltimoPontoLayer = useRef<VectorLayer<any> | null>(null);
   const firstPoint = useRef<Feature<Geometry> | null>(null);
   const lastPointTrajetoria = useRef<Feature<Geometry> | null>(null);
   const lastPoint = useRef<Feature<Geometry> | null>(null);
-  const overlayTrajetoria = useRef<Overlay | null>(null);
   const vectorUltimoPontoTrajetoriaLayer = useRef<VectorLayer<any> | null>(
     null
   );
@@ -108,41 +112,35 @@ export default function VisualizacaoIndividual() {
     setIsLoading(false);
   }, [isLoading]);
   useEffect(() => {
-    fetch("https://api.idals.com.br/localizacao").then((response) => {
-      const localizacaoOptionsAux: typeof localizacaoOptions = [];
-      response.json().then((localizacoes: Array<DataLocalizacao>) => {
-        localizacoes.forEach((localizacao) => {
-          localizacaoOptionsAux.push({
-            label: localizacao.nome,
-            value: localizacao.id,
-          });
-        });
-        setLocalizacaoOptions(localizacaoOptionsAux);
-        if (localizacaoOptionsAux.length > 0) {
-          setLocalizacao(localizacaoOptionsAux[0].value as number);
-        }
+    const localizacaoOptionsAux: typeof localizacaoOptions = [];
+    dataLocalizacao?.forEach((localizacao) => {
+      localizacaoOptionsAux.push({
+        label: localizacao.nome,
+        value: localizacao.id,
       });
     });
-    fetch("https://api.idals.com.br/funcionario").then((response) => {
-      const funcionarioOptionsAux: Array<{ label: string; value: string }> = [];
-      const funcionarioInfosAux: Record<string, any> = {};
-      response.json().then((funcionarios: Array<DadosFuncionarios>) => {
-        funcionarios.forEach((funcionario) => {
-          funcionarioInfosAux[funcionario.nome] = {
-            telefone: funcionario.telefone,
-          };
-          funcionarioOptionsAux.push({
-            label: funcionario.nome,
-            value: funcionario.nome,
-          });
-        });
-        setFuncionarioOptions(funcionarioOptionsAux);
-        funcionariosInfo.current = funcionarioInfosAux;
-        setUser(funcionarioOptionsAux[0]?.value);
-        userRef.current = funcionarioOptionsAux[0]?.value;
+    setLocalizacaoOptions(localizacaoOptionsAux);
+    if (localizacaoOptionsAux.length > 0) {
+      setLocalizacao(localizacaoOptionsAux[0].value as number);
+    }
+  }, [dataLocalizacao]);
+  useEffect(() => {
+    const funcionarioOptionsAux: Array<{ label: string; value: string }> = [];
+    const funcionarioInfosAux: Record<string, Partial<DadosFuncionarios>> = {};
+    dataFuncionario?.forEach((funcionario) => {
+      funcionarioInfosAux[funcionario.nome] = {
+        telefone: funcionario.telefone,
+      };
+      funcionarioOptionsAux.push({
+        label: funcionario.nome,
+        value: funcionario.nome,
       });
     });
-  }, []);
+    setFuncionarioOptions(funcionarioOptionsAux);
+    funcionariosInfo.current = funcionarioInfosAux;
+    setUser(funcionarioOptionsAux[0]?.value);
+    userRef.current = funcionarioOptionsAux[0]?.value;
+  }, [dataFuncionario]);
   useEffect(() => {
     if (mapTrajetoria) {
       wmsTrajetoriaLayer.current = addWMSLayer(mapTrajetoria);
@@ -1011,7 +1009,7 @@ export default function VisualizacaoIndividual() {
                 id="popup2"
                 hidden={true}
               >
-                <div id="popup-content2"></div>
+                <div id="popup-content2" />
               </div>
               <div
                 style={{
@@ -1024,7 +1022,7 @@ export default function VisualizacaoIndividual() {
                 hidden={true}
                 id="popup"
               >
-                <div id="popup-content"></div>
+                <div id="popup-content" />
               </div>
               {isLoading && (
                 <Spin

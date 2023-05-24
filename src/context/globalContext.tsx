@@ -3,16 +3,21 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { useToast } from "../components/toast";
 import { DataPanics, DataPanicWs, Panics, PanicsAll } from "../types";
 import usePanic from "../hooks/useQuery/usePanic";
+import { validateToken } from "../hooks/useQuery/api";
+import Spin from "../components/spin";
 type GlobalContextValues = {
   panics: PanicsAll;
   socket: WebSocket | null;
   hasConnectionWithWs: boolean;
+  isAuth: boolean;
+  setIsAuth: (auth: boolean) => void;
   updatePanics: (id: string | number, body: Partial<DataPanics>) => void;
 };
 
@@ -21,6 +26,8 @@ export const GlobalContext = React.createContext<GlobalContextValues>({
     tratados: [],
     naoTratados: [],
   },
+  isAuth: false,
+  setIsAuth: () => {},
   socket: null,
   hasConnectionWithWs: false,
   updatePanics: () => {},
@@ -67,6 +74,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
           );
 
           ws?.addEventListener("message", (e) => {
+            if (!isAuth) return;
             const data = JSON.parse(e.data) as DataPanicWs;
             if (data?.func !== "panico") return;
             onMessage(data);
@@ -93,6 +101,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
     },
     []
   );
+  const [isAuth, setIsAuth] = useState(false);
   const [panics, setPanics] = useState<PanicsAll>({
     naoTratados: [],
     tratados: [],
@@ -109,9 +118,10 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
 
           return true;
         });
-
+        panicsRef.current = lastCopy;
         return lastCopy;
       });
+      toastCallTopRight(`Pânico ${id} tratado com sucesso`, 1000);
     },
     []
   );
@@ -120,7 +130,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
     naoTratados: [],
   });
   const socketRef = useRef<null | WebSocket>(null);
-  const refTimer = useRef<number>();
+  const refTimer = useRef<number | null | undefined>(undefined);
   const { updatePanic } = usePanic({
     onSuccessUpdate: (data) => {
       updatePanics(data.id as number, {
@@ -139,18 +149,19 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
         }
         panicsAll.naoTratados.push(value);
       });
+      panicsRef.current = panicsAll;
       setPanics(panicsAll);
     },
     query: "",
   });
   const [hasConnectionWithWs, setHasConnectionWithWs] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    if (refTimer !== undefined) {
-      clearTimeout(refTimer.current);
-      refTimer.current = undefined;
-    }
     function sendPanicNotification() {
-      panicsRef.current = panics;
+      console.debug(refTimer.current, "ref");
+      if (refTimer.current !== undefined && refTimer.current !== null) return;
+
       if (panicsRef.current?.naoTratados?.length === 0) return;
       if (panicsRef.current?.naoTratados?.length === 1) {
         toastCallTopRight(
@@ -167,18 +178,16 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
           { backgroundColor: "#BC0202" }
         );
       }
-      panicsRef.current = panics;
       refTimer.current = setTimeout(() => {
+        refTimer.current = null;
         sendPanicNotification();
       }, 20000) as unknown as number;
     }
-    if (isShowingFuncToast) {
-      return;
-    }
+
     setTimeout(() => {
       sendPanicNotification();
-    }, 1000);
-  }, [panics, isShowingFuncToast]);
+    }, 1000) as unknown as number;
+  }, [isShowingFuncToast, isAuth, panicsRef.current]);
 
   const onClose = useCallback(() => {
     setHasConnectionWithWs(() => false);
@@ -206,12 +215,59 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
     [setPanics]
   );
   useEffect(() => {
+    validateToken()
+      .then(() => {
+        setIsAuth(true);
+      })
+      .catch(() => {
+        console.info("Token invalid");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
     webSocketConnect(socketRef, onClose, onOpen, onMessage);
   }, []);
+  function Loading() {
+    return useMemo(
+      () => (
+        <div
+          style={{
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "f4f4f4",
+            flexDirection: "column",
+            rowGap: "10rem",
+          }}
+        >
+          <Spin
+            style={{
+              width: "10rem",
+              height: "10rem",
+              transform: "translate(100%, -50%)",
+              zIndex: 99,
+            }}
+          />
+          <h2>Por favor aguarde</h2>
+        </div>
+      ),
+      []
+    );
+  }
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <GlobalContext.Provider
       value={{
+        isAuth,
+        setIsAuth,
         updatePanics: updatePanic,
         panics,
         socket: socketRef.current,

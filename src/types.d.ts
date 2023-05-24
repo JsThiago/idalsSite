@@ -7,6 +7,14 @@ export interface PostFuncionario {
   area: string;
 }
 
+export interface BodyLocalizacao {
+  nome: string;
+  descricao: string;
+  tipo: string;
+  localizacao: Array<number | Array<number> | Array<Array<number>>>;
+  check: boolean;
+}
+
 export interface BodyLogin {
   login: string;
   senha: string;
@@ -70,7 +78,7 @@ export interface LocationData {
   id: number;
   nome: string;
   descricao: string;
-  localizacao: Array<any>;
+  localizacao: Array<number | Array<number> | Array<Array<number>>>;
 }
 
 export interface PanicsAll {

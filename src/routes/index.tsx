@@ -18,18 +18,17 @@ import RotasDeInteresse from "../pages/rotasDeInteresse";
 import Vinculos from "../pages/vinculos";
 import VisualizacaoEmGrupo from "../pages/visualizacaoEmGrupo";
 import VisualizacaoIndividual from "../pages/visualizacaoIndividual";
-import packageJson from "../../package.json";
 import Dashboard from "../pages/dashboard";
 import Relatorio from "../pages/relatorio";
 import Login from "../pages/login";
 import useLogin from "../hooks/useQuery/useLogin";
 import { BodyLogin } from "../types";
-import { throws } from "assert";
 import LoginErrado from "../erros/loginErrado";
 import { useToast } from "../components/toast";
 import { validateToken } from "../hooks/useQuery/api";
 import Spin from "../components/spin";
 import { setLocalStorageAsync } from "../utils/localStorageAsync";
+import { useGlobalContext } from "../context/globalContext";
 function BaseLayout({
   Component,
   onExit,
@@ -77,20 +76,8 @@ function BaseLayout({
 function CustomRoutes() {
   console.log("no custom routes");
   const { toastCallTopRight } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
+  const { setIsAuth, isAuth } = useGlobalContext();
   const login = useLogin();
-  useEffect(() => {
-    validateToken()
-      .then(() => {
-        setIsAuth(true);
-      })
-      .catch(() => {
-        console.info("Token invalid");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
   function onExit() {
     localStorage.removeItem("token");
     setIsAuth(false);
@@ -117,45 +104,12 @@ function CustomRoutes() {
       console.error("error");
     }
   }, []);
-  const [isAuth, setIsAuth] = useState(false);
-  function Loading() {
-    return useMemo(
-      () => (
-        <div
-          style={{
-            position: "relative",
-            width: "100vw",
-            height: "100vh",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "f4f4f4",
-            flexDirection: "column",
-            rowGap: "10rem",
-          }}
-        >
-          <Spin
-            style={{
-              width: "10rem",
-              height: "10rem",
-              transform: "translate(100%, -50%)",
-              zIndex: 99,
-            }}
-          />
-          <h2>Por favor aguarde</h2>
-        </div>
-      ),
-      []
-    );
-  }
+
   console.info("auth", isAuth);
   function baseLayout(
     Component: (() => JSX.Element) | MemoExoticComponent<() => JSX.Element>
   ) {
     return <BaseLayout onExit={onExit} Component={Component} />;
-  }
-  if (isLoading) {
-    return <Loading />;
   }
   if (!isAuth) {
     return <Login onLogin={onLogin} />;

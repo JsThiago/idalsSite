@@ -22,10 +22,6 @@ import useData from "../../hooks/useQuery/useData";
 import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
 import { todayInStringFormat } from "../../utils/dates.utils";
 import randomColorGenerator from "../../utils/randomColorGenerator";
-interface DadosArea {
-  id: number;
-  nome: string;
-}
 
 export default function VisualizacaoEmGrupo() {
   const [data, setData] = useState(todayInStringFormat());

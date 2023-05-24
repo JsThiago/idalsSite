@@ -5,7 +5,6 @@ import L, {
   type LatLngExpression,
   latLng,
 } from "leaflet";
-import { relative } from "path";
 import React, {
   LegacyRef,
   useCallback,
@@ -14,6 +13,8 @@ import React, {
   useRef,
   useState,
 } from "react";
+import useLocalizacao from "../../hooks/useQuery/useLocalizacao";
+import { BodyLocalizacao } from "../../types";
 import Button from "../button";
 import CustomInput from "../input";
 import Paper from "../paper";
@@ -36,6 +37,7 @@ export default function CriacaoLocaisDeInteresse({
   const [opcoes, setOpcoes] = useState<Array<string>>([]);
   const [opcao, setOpcao] = useState(tipoSugerido.current);
   const mapRefDiv = useRef<HTMLElement>();
+  const { createLocalizacao } = useLocalizacao();
   const mapRef = useRef<Map>();
   const [tipo, setTipo] = useState<string>("");
   const [descricao, setDescricao] = useState<string>("");
@@ -47,7 +49,7 @@ export default function CriacaoLocaisDeInteresse({
   const layerGroupRef = useRef<L.LayerGroup>();
   const initialView: LatLngExpression = [-20.2089622, -43.4796796];
   function createMap(container: HTMLElement) {
-    let m = L.map(container, { preferCanvas: true }).setView(initialView, 14);
+    const m = L.map(container, { preferCanvas: true }).setView(initialView, 14);
     L.tileLayer("http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}", {
       attribution: `
 	        &copy;<a href="https://carto.com/attributions" target="_blank">CARTO</a>`,
@@ -73,34 +75,30 @@ export default function CriacaoLocaisDeInteresse({
           point.lat,
         ] as [number, number]);
       });
-    const data = JSON.stringify({
+    const data: BodyLocalizacao = {
       nome,
       descricao,
       tipo,
       localizacao,
       check: true,
-    });
-    fetch("https://api.idals.com.br/localizacao", {
-      method: "POST",
-      body: data,
-      headers: { "content-type": "application/json" },
-    })
-      .then((response) => {
-        if (response.status !== 201) {
-          toastCall("Ocorreu um erro. Por favor tente novamente");
-          return;
-        }
-
+    };
+    createLocalizacao(
+      data,
+      () => {
         toastCall("Cadastrado com sucesso ");
-      })
-      .finally(() => {
+      },
+      () => {
+        toastCall("Ocorreu um erro. Por favor tente novamente");
+      },
+      () => {
         setNome("");
         setDescricao("");
         cleanAllMarkers();
-      });
+      }
+    );
   }, [descricao, nome, tipo]);
   function markerIcon(i: number, size = 20) {
-    let html = `<div className="map-marker" style="width: ${size}px; height: ${size}px; background-color: #90f; border-radius: 50%; color: #fff; font-size: 26px; opacity: 50%;">${i}</div>`;
+    const html = `<div className="map-marker" style="width: ${size}px; height: ${size}px; background-color: #90f; border-radius: 50%; color: #fff; font-size: 26px; opacity: 50%;">${i}</div>`;
     return L.divIcon({
       html,
       className: "map-marker",
@@ -108,8 +106,8 @@ export default function CriacaoLocaisDeInteresse({
   }
 
   function createMarker(loc: L.LatLng, index: number) {
-    let icon = markerIcon(index);
-    let marker = L.marker(loc, { icon });
+    const icon = markerIcon(index);
+    const marker = L.marker(loc, { icon });
     return marker;
   }
   function cleanAllMarkers() {
@@ -139,7 +137,7 @@ export default function CriacaoLocaisDeInteresse({
       ml = null;
     }
 
-    let m = createMarker(pontos, markerLocations.current.length);
+    const m = createMarker(pontos, markerLocations.current.length);
     m.addTo(layerGroupRef.current as LayerGroup);
     if (markerLocations.current.length > 1) {
       ll = createLines();
@@ -152,7 +150,7 @@ export default function CriacaoLocaisDeInteresse({
     b: LatLngExpression,
     distancia: number
   ): boolean {
-    let A = latLng(a);
+    const A = latLng(a);
     console.info(
       "distancias",
       mapRef.current?.getZoom(),
@@ -166,7 +164,7 @@ export default function CriacaoLocaisDeInteresse({
     else if (zoom > 11) unit = 1000;
     else if (zoom >= 9) unit = 10000;
     else unit = 20000;
-    let dist = A.distanceTo(b) / unit;
+    const dist = A.distanceTo(b) / unit;
     if (dist <= distancia) {
       b = a;
       return true;
@@ -285,7 +283,7 @@ export default function CriacaoLocaisDeInteresse({
     });
     mapRef.current.on("click", (e) => {
       if (tipoSugerido.current === "area") return;
-      let a = markerLocations.current[0] || e.latlng;
+      const a = markerLocations.current[0] || e.latlng;
       if (markerLocations.current.length + 1 === 1) {
         attOption("ponto");
         tipoSugerido.current = "ponto";
