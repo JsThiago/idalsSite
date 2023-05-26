@@ -61,6 +61,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
     ) => {
       connectWsPromise()
         .then((ws) => {
+          console.debug("conectando");
           socketRef.current = ws;
           onOpen();
           ws?.addEventListener(
@@ -144,6 +145,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
         naoTratados: [],
         tratados: [],
       };
+      console.debug("onSuccess", ...data);
       data.forEach((value) => {
         if (value.tratado) {
           panicsAll.tratados.push(value);
@@ -155,6 +157,7 @@ const GlobalContextWrapper: React.FunctionComponent<PropsWithChildren> = ({
       setPanics(panicsAll);
     },
     query: "",
+    isAuth,
   });
   const [hasConnectionWithWs, setHasConnectionWithWs] = useState(false);
 

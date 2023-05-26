@@ -8,11 +8,13 @@ export default function usePanic({
   body,
   query,
   onSuccessUpdate,
+  isAuth,
 }: {
   onSuccess?: (data: Array<Panics>) => void;
   body?: BodyPanics;
   query?: string;
   onSuccessUpdate?: (data: DataPanics) => void | Promise<void>;
+  isAuth?: boolean;
 }) {
   const [panicos, setPanicos] = useState<Array<DataPanics>>([]);
   const {
@@ -39,6 +41,7 @@ export default function usePanic({
     return { isLoading: isLoadingUpdate, isError: isErrorUpdate };
   }
   useEffect(() => {
+    if (!isAuth) return;
     mutate(
       { body: body || { areas: [], funcionarios: [] }, query: query || "" },
       {
@@ -67,7 +70,7 @@ export default function usePanic({
         },
       }
     );
-  }, []);
+  }, [isAuth]);
 
   return { data: panicos, isLoading, isError, updatePanic };
 }

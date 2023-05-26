@@ -147,6 +147,7 @@ export default function PanicNotification({
   onClick?: (panics: Array<Panics>) => void;
 }) {
   const { panics, hasConnectionWithWs } = useGlobalContext();
+  console.debug("has connection with ws", hasConnectionWithWs, panics);
   if (!hasConnectionWithWs) {
     return <PanicIconNotificationNoNetworkPanic />;
   }
